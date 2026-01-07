@@ -1,5 +1,4 @@
-import bcrypt from 'bcrypt';
-import { prisma } from '../../config/database.js';
+import { User } from '../../models/index.js';
 import { ApiError } from '../../utils/ApiError.js';
 import {
   generateTokens,
@@ -21,53 +20,38 @@ class AuthService {
     const { email, password, firstName, lastName } = userData;
 
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
 
     if (existingUser) {
       throw new ApiError(409, 'Email already registered');
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        firstName,
-        lastName,
-      },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        avatar: true,
-        role: true,
-        isEmailVerified: true,
-        createdAt: true,
-      },
+    // Create user (password will be hashed by pre-save hook)
+    const user = await User.create({
+      email: email.toLowerCase(),
+      password,
+      firstName,
+      lastName,
     });
 
     // Generate email verification token
-    const verificationToken = generateEmailVerificationToken({ userId: user.id });
+    const verificationToken = generateEmailVerificationToken({ userId: user._id.toString() });
 
     // Send verification email
     await sendVerificationEmail(email, firstName, verificationToken);
 
     // Generate auth tokens
-    const { accessToken, refreshToken } = generateTokens(user);
-
-    // Save refresh token to database
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { refreshToken },
+    const { accessToken, refreshToken } = generateTokens({
+      id: user._id.toString(),
+      email: user.email,
+      role: user.role,
     });
 
-    return { user, accessToken, refreshToken };
+    // Save refresh token to database
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    return { user: user.toJSON(), accessToken, refreshToken };
   }
 
   /**
@@ -76,41 +60,35 @@ class AuthService {
   async login(credentials) {
     const { email, password } = credentials;
 
-    // Find user
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    // Find user (include password for verification)
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
 
     if (!user) {
       throw new ApiError(401, 'Invalid email or password');
     }
 
     // Verify password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await user.comparePassword(password);
 
     if (!isPasswordValid) {
       throw new ApiError(401, 'Invalid email or password');
     }
 
     // Update last seen
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { lastSeenAt: new Date() },
-    });
+    user.lastSeenAt = new Date();
 
     // Generate tokens
-    const { accessToken, refreshToken } = generateTokens(user);
-
-    // Save refresh token
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { refreshToken },
+    const { accessToken, refreshToken } = generateTokens({
+      id: user._id.toString(),
+      email: user.email,
+      role: user.role,
     });
 
-    // Remove password from response
-    const { password: _, ...userWithoutPassword } = user;
+    // Save refresh token
+    user.refreshToken = refreshToken;
+    await user.save();
 
-    return { user: userWithoutPassword, accessToken, refreshToken };
+    return { user: user.toJSON(), accessToken, refreshToken };
   }
 
   /**
@@ -118,11 +96,7 @@ class AuthService {
    */
   async logout(userId) {
     // Clear refresh token from database
-    await prisma.user.update({
-      where: { id: userId },
-      data: { refreshToken: null },
-    });
-
+    await User.findByIdAndUpdate(userId, { refreshToken: null });
     return true;
   }
 
@@ -139,22 +113,22 @@ class AuthService {
       const decoded = verifyRefreshToken(refreshToken);
 
       // Get user and verify refresh token matches
-      const user = await prisma.user.findUnique({
-        where: { id: decoded.userId },
-      });
+      const user = await User.findById(decoded.userId);
 
       if (!user || user.refreshToken !== refreshToken) {
         throw new ApiError(401, 'Invalid refresh token');
       }
 
       // Generate new tokens
-      const tokens = generateTokens(user);
+      const tokens = generateTokens({
+        id: user._id.toString(),
+        email: user.email,
+        role: user.role,
+      });
 
       // Update refresh token in database
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { refreshToken: tokens.refreshToken },
-      });
+      user.refreshToken = tokens.refreshToken;
+      await user.save();
 
       return tokens;
     } catch (error) {
@@ -171,17 +145,15 @@ class AuthService {
       const decoded = verifyEmailVerificationToken(token);
 
       // Update user
-      const user = await prisma.user.update({
-        where: { id: decoded.userId },
-        data: { isEmailVerified: true },
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-          isEmailVerified: true,
-        },
-      });
+      const user = await User.findByIdAndUpdate(
+        decoded.userId,
+        { isEmailVerified: true },
+        { new: true }
+      ).select('id email firstName lastName isEmailVerified');
+
+      if (!user) {
+        throw new ApiError(404, 'User not found');
+      }
 
       // Send welcome email
       await sendWelcomeEmail(user.email, user.firstName);
@@ -196,9 +168,7 @@ class AuthService {
    * Resend verification email
    */
   async resendVerificationEmail(userId) {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const user = await User.findById(userId);
 
     if (!user) {
       throw new ApiError(404, 'User not found');
@@ -209,7 +179,7 @@ class AuthService {
     }
 
     // Generate new verification token
-    const verificationToken = generateEmailVerificationToken({ userId: user.id });
+    const verificationToken = generateEmailVerificationToken({ userId: user._id.toString() });
 
     // Send verification email
     await sendVerificationEmail(user.email, user.firstName, verificationToken);
@@ -221,9 +191,7 @@ class AuthService {
    * Forgot password - send reset email
    */
   async forgotPassword(email) {
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    const user = await User.findOne({ email: email.toLowerCase() });
 
     // Don't reveal if user exists for security
     if (!user) {
@@ -231,7 +199,7 @@ class AuthService {
     }
 
     // Generate reset token
-    const resetToken = generateEmailVerificationToken({ userId: user.id });
+    const resetToken = generateEmailVerificationToken({ userId: user._id.toString() });
 
     // Send reset email
     await sendPasswordResetEmail(user.email, user.firstName, resetToken);
@@ -247,17 +215,17 @@ class AuthService {
       // Verify token
       const decoded = verifyEmailVerificationToken(token);
 
-      // Hash new password
-      const hashedPassword = await bcrypt.hash(newPassword, 12);
+      // Find user
+      const user = await User.findById(decoded.userId);
 
-      // Update password and clear refresh token
-      await prisma.user.update({
-        where: { id: decoded.userId },
-        data: {
-          password: hashedPassword,
-          refreshToken: null, // Invalidate all sessions
-        },
-      });
+      if (!user) {
+        throw new ApiError(404, 'User not found');
+      }
+
+      // Update password (will be hashed by pre-save hook) and clear refresh token
+      user.password = newPassword;
+      user.refreshToken = null; // Invalidate all sessions
+      await user.save();
 
       return true;
     } catch (error) {
@@ -269,29 +237,22 @@ class AuthService {
    * Change password (for authenticated users)
    */
   async changePassword(userId, currentPassword, newPassword) {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const user = await User.findById(userId).select('+password');
 
     if (!user) {
       throw new ApiError(404, 'User not found');
     }
 
     // Verify current password
-    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    const isPasswordValid = await user.comparePassword(currentPassword);
 
     if (!isPasswordValid) {
       throw new ApiError(401, 'Current password is incorrect');
     }
 
-    // Hash new password
-    const hashedPassword = await bcrypt.hash(newPassword, 12);
-
-    // Update password
-    await prisma.user.update({
-      where: { id: userId },
-      data: { password: hashedPassword },
-    });
+    // Update password (will be hashed by pre-save hook)
+    user.password = newPassword;
+    await user.save();
 
     return true;
   }
@@ -300,20 +261,9 @@ class AuthService {
    * Get current user
    */
   async getCurrentUser(userId) {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        avatar: true,
-        role: true,
-        isEmailVerified: true,
-        lastSeenAt: true,
-        createdAt: true,
-      },
-    });
+    const user = await User.findById(userId).select(
+      'id email firstName lastName avatar role isEmailVerified lastSeenAt createdAt'
+    );
 
     if (!user) {
       throw new ApiError(404, 'User not found');

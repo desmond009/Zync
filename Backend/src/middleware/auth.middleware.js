@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config/env.js';
 import { ApiError } from '../utils/ApiError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { prisma } from '../config/database.js';
+import { User } from '../models/index.js';
 
 /**
  * Verify JWT access token and attach user to request
@@ -22,18 +22,9 @@ export const authenticate = asyncHandler(async (req, res, next) => {
     const decoded = jwt.verify(token, config.jwt.accessSecret);
 
     // Get user from database
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        avatar: true,
-        role: true,
-        isEmailVerified: true,
-      },
-    });
+    const user = await User.findById(decoded.userId).select(
+      'id email firstName lastName avatar role isEmailVerified'
+    );
 
     if (!user) {
       throw new ApiError(401, 'Invalid access token');
@@ -88,17 +79,8 @@ export const optionalAuth = asyncHandler(async (req, res, next) => {
           lastName: true,
           avatar: true,
           role: true,
-          isEmailVerified: true,
-        },
-      });
-
-      if (user) {
-        req.user = user;
-      }
-    }
-  } catch (error) {
-    // Silently fail for optional auth
-  }
-  
+          isEmailVerifiedUser.findById(decoded.userId).select(
+        'id email firstName lastName avatar role isEmailVerified'
+      
   next();
 });

@@ -1,68 +1,50 @@
-import { PrismaClient } from '@prisma/client';
+import mongoose from 'mongoose';
 
-// Singleton pattern for Prisma Client
+// Singleton pattern for MongoDB connection
 class DatabaseClient {
   constructor() {
     if (!DatabaseClient.instance) {
-      this.prisma = new PrismaClient({
-        log:
-          process.env.NODE_ENV === 'development'
-            ? ['query', 'info', 'warn', 'error']
-            : ['error'],
-        errorFormat: 'pretty',
-      });
-
-      // Middleware for soft delete
-      this.prisma.$use(async (params, next) => {
-        // Check if the operation is a findUnique or findFirst
-        if (params.action === 'findUnique' || params.action === 'findFirst') {
-          params.action = 'findFirst';
-          params.args.where = {
-            ...params.args.where,
-            deletedAt: null,
-          };
-        }
-
-        // Check if the operation is a findMany
-        if (params.action === 'findMany') {
-          if (params.args.where) {
-            if (params.args.where.deletedAt === undefined) {
-              params.args.where.deletedAt = null;
-            }
-          } else {
-            params.args.where = { deletedAt: null };
-          }
-        }
-
-        // Check if the operation is a delete
-        if (params.action === 'delete') {
-          params.action = 'update';
-          params.args.data = { deletedAt: new Date() };
-        }
-
-        // Check if the operation is a deleteMany
-        if (params.action === 'deleteMany') {
-          params.action = 'updateMany';
-          if (params.args.data !== undefined) {
-            params.args.data.deletedAt = new Date();
-          } else {
-            params.args.data = { deletedAt: new Date() };
-          }
-        }
-
-        return next(params);
-      });
-
+      this.mongoose = mongoose;
+      this.isConnected = false;
       DatabaseClient.instance = this;
     }
-
     return DatabaseClient.instance;
   }
 
   async connect() {
+    if (this.isConnected) {
+      console.log('✅ Using existing database connection');
+      return;
+    }
+
     try {
-      await this.prisma.$connect();
+      const options = {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+      };
+
+      await mongoose.connect(process.env.DATABASE_URL, options);
+
+      this.isConnected = true;
       console.log('✅ Database connected successfully');
+
+      // Handle connection events
+      mongoose.connection.on('error', (err) => {
+        console.error('❌ MongoDB connection error:', err);
+      });
+
+      mongoose.connection.on('disconnected', () => {
+        console.log('🔌 MongoDB disconnected');
+        this.isConnected = false;
+      });
+
+      // Graceful shutdown
+      process.on('SIGINT', async () => {
+        await this.disconnect();
+        process.exit(0);
+      });
     } catch (error) {
       console.error('❌ Database connection failed:', error);
       process.exit(1);
@@ -70,13 +52,23 @@ class DatabaseClient {
   }
 
   async disconnect() {
-    await this.prisma.$disconnect();
-    console.log('🔌 Database disconnected');
+    if (!this.isConnected) return;
+
+    try {
+      await mongoose.connection.close();
+      this.isConnected = false;
+      console.log('🔌 Database disconnected');
+    } catch (error) {
+      console.error('Error disconnecting from database:', error);
+    }
   }
 
   async healthCheck() {
     try {
-      await this.prisma.$queryRaw`SELECT 1`;
+      if (!this.isConnected) return false;
+      
+      const adminDb = mongoose.connection.db.admin();
+      await adminDb.ping();
       return true;
     } catch (error) {
       console.error('Database health check failed:', error);
@@ -84,11 +76,11 @@ class DatabaseClient {
     }
   }
 
-  getClient() {
-    return this.prisma;
+  getConnection() {
+    return mongoose.connection;
   }
 }
 
 const databaseClient = new DatabaseClient();
-export const prisma = databaseClient.getClient();
 export default databaseClient;
+

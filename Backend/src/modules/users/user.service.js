@@ -1,27 +1,16 @@
-import { prisma } from '../../config/database.js';
 import { ApiError } from '../../utils/ApiError.js';
 import { getPaginationMeta, getSkip } from '../../utils/pagination.js';
 import { uploadToCloudinary, deleteFromCloudinary } from '../../config/cloudinary.js';
+import { User, TeamMember, ProjectMember, Task } from '../../models/index.js';
 
 class UserService {
   /**
    * Get user profile by ID
    */
   async getUserById(userId) {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        avatar: true,
-        role: true,
-        isEmailVerified: true,
-        lastSeenAt: true,
-        createdAt: true,
-      },
-    });
+    const user = await User.findById(userId).select(
+      'id email firstName lastName avatar role isEmailVerified lastSeenAt createdAt'
+    );
 
     if (!user) {
       throw new ApiError(404, 'User not found');
@@ -34,21 +23,11 @@ class UserService {
    * Update user profile
    */
   async updateProfile(userId, updateData) {
-    const user = await prisma.user.update({
-      where: { id: userId },
-      data: updateData,
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        avatar: true,
-        role: true,
-        isEmailVerified: true,
-        lastSeenAt: true,
-        createdAt: true,
-      },
-    });
+    const user = await User.findByIdAndUpdate(userId, updateData, {
+      new: true,
+    }).select(
+      'id email firstName lastName avatar role isEmailVerified lastSeenAt createdAt'
+    );
 
     return user;
   }
@@ -58,10 +37,7 @@ class UserService {
    */
   async uploadAvatar(userId, filePath) {
     // Get current user to check if avatar exists
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { avatar: true },
-    });
+    const user = await User.findById(userId).select('avatar');
 
     // Delete old avatar if exists
     if (user.avatar) {
@@ -79,17 +55,11 @@ class UserService {
     });
 
     // Update user
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: { avatar: uploadResult.url },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        avatar: true,
-      },
-    });
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { avatar: uploadResult.url },
+      { new: true }
+    ).select('id email firstName lastName avatar');
 
     return updatedUser;
   }
@@ -98,12 +68,9 @@ class UserService {
    * Delete user account (soft delete)
    */
   async deleteAccount(userId) {
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        deletedAt: new Date(),
-        refreshToken: null,
-      },
+    await User.findByIdAndUpdate(userId, {
+      deletedAt: new Date(),
+      refreshToken: null,
     });
 
     return true;
@@ -115,34 +82,25 @@ class UserService {
   async searchUsers(query, page = 1, limit = 20) {
     const skip = getSkip(page, limit);
 
+    const searchRegex = new RegExp(query, 'i');
     const [users, total] = await Promise.all([
-      prisma.user.findMany({
-        where: {
-          OR: [
-            { firstName: { contains: query, mode: 'insensitive' } },
-            { lastName: { contains: query, mode: 'insensitive' } },
-            { email: { contains: query, mode: 'insensitive' } },
-          ],
-        },
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-          avatar: true,
-        },
-        skip,
-        take: limit,
-        orderBy: { firstName: 'asc' },
-      }),
-      prisma.user.count({
-        where: {
-          OR: [
-            { firstName: { contains: query, mode: 'insensitive' } },
-            { lastName: { contains: query, mode: 'insensitive' } },
-            { email: { contains: query, mode: 'insensitive' } },
-          ],
-        },
+      User.find({
+        $or: [
+          { firstName: searchRegex },
+          { lastName: searchRegex },
+          { email: searchRegex },
+        ],
+      })
+        .select('id email firstName lastName avatar')
+        .skip(skip)
+        .limit(limit)
+        .sort({ firstName: 1 }),
+      User.countDocuments({
+        $or: [
+          { firstName: searchRegex },
+          { lastName: searchRegex },
+          { email: searchRegex },
+        ],
       }),
     ]);
 
@@ -155,30 +113,17 @@ class UserService {
    * Get user's teams
    */
   async getUserTeams(userId) {
-    const teamMemberships = await prisma.teamMember.findMany({
-      where: { userId },
-      include: {
-        team: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            ownerId: true,
-            createdAt: true,
-            _count: {
-              select: {
-                members: true,
-                projects: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: { joinedAt: 'desc' },
-    });
+    const teamMemberships = await TeamMember.find({
+      userId,
+    })
+      .populate({
+        path: 'teamId',
+        select: 'id name description ownerId createdAt',
+      })
+      .sort({ joinedAt: -1 });
 
     return teamMemberships.map((membership) => ({
-      ...membership.team,
+      ...membership.teamId.toObject(),
       role: membership.role,
       joinedAt: membership.joinedAt,
     }));
@@ -188,32 +133,21 @@ class UserService {
    * Get user's projects
    */
   async getUserProjects(userId) {
-    const projectMemberships = await prisma.projectMember.findMany({
-      where: { userId },
-      include: {
-        project: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            status: true,
-            color: true,
-            teamId: true,
-            createdAt: true,
-            team: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
+    const projectMemberships = await ProjectMember.find({
+      userId,
+    })
+      .populate({
+        path: 'projectId',
+        select: 'id name description status color teamId createdAt',
+        populate: {
+          path: 'teamId',
+          select: 'id name',
         },
-      },
-      orderBy: { joinedAt: 'desc' },
-    });
+      })
+      .sort({ joinedAt: -1 });
 
     return projectMemberships.map((membership) => ({
-      ...membership.project,
+      ...membership.projectId.toObject(),
       role: membership.role,
       joinedAt: membership.joinedAt,
     }));
@@ -224,42 +158,20 @@ class UserService {
    */
   async getUserTasks(userId, status = null) {
     const where = {
-      OR: [{ createdById: userId }, { assignedToId: userId }],
+      $or: [{ createdById: userId }, { assignedToId: userId }],
     };
 
     if (status) {
       where.status = status;
     }
 
-    const tasks = await prisma.task.findMany({
-      where,
-      include: {
-        project: {
-          select: {
-            id: true,
-            name: true,
-            color: true,
-          },
-        },
-        assignedTo: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            avatar: true,
-          },
-        },
-        createdBy: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            avatar: true,
-          },
-        },
-      },
-      orderBy: [{ dueDate: 'asc' }, { createdAt: 'desc' }],
-    });
+    const tasks = await Task.find(where)
+      .populate([
+        { path: 'projectId', select: 'id name color' },
+        { path: 'assignedToId', select: 'id firstName lastName avatar' },
+        { path: 'createdById', select: 'id firstName lastName avatar' },
+      ])
+      .sort({ dueDate: 1, createdAt: -1 });
 
     return tasks;
   }

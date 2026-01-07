@@ -1,5 +1,5 @@
 import Joi from 'joi';
-import { commonSchemas } from '../validation.js';
+import { commonSchemas } from '../../middleware/validation.js';
 
 export const registerSchema = {
   body: Joi.object({

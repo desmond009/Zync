@@ -70,17 +70,11 @@ export const optionalAuth = asyncHandler(async (req, res, next) => {
 
     if (token) {
       const decoded = jwt.verify(token, config.jwt.accessSecret);
-      const user = await prisma.user.findUnique({
-        where: { id: decoded.userId },
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-          avatar: true,
-          role: true,
-          isEmailVerifiedUser.findById(decoded.userId).select(
-        'id email firstName lastName avatar role isEmailVerified'
-      
+      req.user = { userId: decoded.userId };
+    }
+  } catch (error) {
+    console.error('Optional auth error:', error);
+  }
+
   next();
 });

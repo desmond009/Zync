@@ -1,5 +1,5 @@
-import { prisma } from '../../config/database.js';
 import { ApiError } from '../../utils/ApiError.js';
+import { Team, TeamMember, User, Project } from '../../models/index.js';
 import { nanoid } from 'nanoid';
 
 class TeamService {
@@ -9,41 +9,34 @@ class TeamService {
   async createTeam(userId, teamData) {
     const { name, description } = teamData;
 
-    const team = await prisma.team.create({
-      data: {
-        name,
-        description,
-        ownerId: userId,
-        inviteCode: nanoid(10),
-        members: {
-          create: {
-            userId,
-            role: 'OWNER',
-          },
-        },
-      },
-      include: {
-        members: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                email: true,
-                firstName: true,
-                lastName: true,
-                avatar: true,
-              },
-            },
-          },
-        },
-        _count: {
-          select: {
-            members: true,
-            projects: true,
-          },
-        },
-      },
+    const team = new Team({
+      name,
+      description,
+      ownerId: userId,
+      inviteCode: nanoid(10),
     });
+
+    await team.save();
+
+    // Add user as owner
+    const member = new TeamMember({
+      teamId: team._id,
+      userId,
+      role: 'OWNER',
+    });
+
+    await member.save();
+
+    // Populate and return
+    await team.populate([
+      {
+        path: 'members',
+        populate: {
+          path: 'userId',
+          select: 'id email firstName lastName avatar',
+        },
+      },
+    ]);
 
     return team;
   }
@@ -52,59 +45,34 @@ class TeamService {
    * Get team by ID
    */
   async getTeamById(teamId, userId) {
-    const team = await prisma.team.findUnique({
-      where: { id: teamId },
-      include: {
-        owner: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            avatar: true,
-          },
-        },
-        members: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                email: true,
-                firstName: true,
-                lastName: true,
-                avatar: true,
-                lastSeenAt: true,
-              },
-            },
-          },
-          orderBy: { joinedAt: 'asc' },
-        },
-        projects: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            status: true,
-            color: true,
-            createdAt: true,
-          },
-          orderBy: { createdAt: 'desc' },
-        },
-        _count: {
-          select: {
-            members: true,
-            projects: true,
-          },
-        },
+    const team = await Team.findById(teamId).populate([
+      {
+        path: 'owner',
+        select: 'id email firstName lastName avatar',
       },
-    });
+      {
+        path: 'members',
+        populate: {
+          path: 'userId',
+          select: 'id email firstName lastName avatar lastSeenAt',
+        },
+        options: { sort: { joinedAt: 1 } },
+      },
+      {
+        path: 'projects',
+        select: 'id name description status color createdAt',
+        options: { sort: { createdAt: -1 } },
+      },
+    ]);
 
     if (!team) {
       throw new ApiError(404, 'Team not found');
     }
 
     // Check if user is a member
-    const isMember = team.members.some((member) => member.userId === userId);
+    const isMember = team.members.some(
+      (member) => member.userId._id.toString() === userId
+    );
     if (!isMember) {
       throw new ApiError(403, 'You are not a member of this team');
     }
@@ -119,17 +87,8 @@ class TeamService {
     // Check if user is owner or admin
     await this.checkTeamPermission(teamId, userId, ['OWNER', 'ADMIN']);
 
-    const team = await prisma.team.update({
-      where: { id: teamId },
-      data: updateData,
-      include: {
-        _count: {
-          select: {
-            members: true,
-            projects: true,
-          },
-        },
-      },
+    const team = await Team.findByIdAndUpdate(teamId, updateData, {
+      new: true,
     });
 
     return team;
@@ -142,9 +101,9 @@ class TeamService {
     // Check if user is owner
     await this.checkTeamPermission(teamId, userId, ['OWNER']);
 
-    await prisma.team.delete({
-      where: { id: teamId },
-    });
+    await Team.findByIdAndDelete(teamId);
+    await TeamMember.deleteMany({ teamId });
+    await Project.deleteMany({ teamId });
 
     return true;
   }
@@ -157,22 +116,16 @@ class TeamService {
     await this.checkTeamPermission(teamId, userId, ['OWNER', 'ADMIN']);
 
     // Find user by email
-    const userToInvite = await prisma.user.findUnique({
-      where: { email },
-    });
+    const userToInvite = await User.findOne({ email });
 
     if (!userToInvite) {
       throw new ApiError(404, 'User not found');
     }
 
     // Check if user is already a member
-    const existingMember = await prisma.teamMember.findUnique({
-      where: {
-        teamId_userId: {
-          teamId,
-          userId: userToInvite.id,
-        },
-      },
+    const existingMember = await TeamMember.findOne({
+      teamId,
+      userId: userToInvite._id,
     });
 
     if (existingMember) {
@@ -180,23 +133,16 @@ class TeamService {
     }
 
     // Add member
-    const member = await prisma.teamMember.create({
-      data: {
-        teamId,
-        userId: userToInvite.id,
-        role,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            avatar: true,
-          },
-        },
-      },
+    const member = new TeamMember({
+      teamId,
+      userId: userToInvite._id,
+      role,
+    });
+
+    await member.save();
+    await member.populate({
+      path: 'userId',
+      select: 'id email firstName lastName avatar',
     });
 
     return member;
@@ -210,13 +156,9 @@ class TeamService {
     await this.checkTeamPermission(teamId, userId, ['OWNER', 'ADMIN']);
 
     // Cannot change owner role
-    const member = await prisma.teamMember.findUnique({
-      where: {
-        teamId_userId: {
-          teamId,
-          userId: memberId,
-        },
-      },
+    const member = await TeamMember.findOne({
+      teamId,
+      userId: memberId,
     });
 
     if (!member) {
@@ -227,25 +169,16 @@ class TeamService {
       throw new ApiError(400, 'Cannot change owner role');
     }
 
-    const updatedMember = await prisma.teamMember.update({
-      where: {
-        teamId_userId: {
-          teamId,
-          userId: memberId,
-        },
+    const updatedMember = await TeamMember.findOneAndUpdate(
+      {
+        teamId,
+        userId: memberId,
       },
-      data: { role: newRole },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            avatar: true,
-          },
-        },
-      },
+      { role: newRole },
+      { new: true }
+    ).populate({
+      path: 'userId',
+      select: 'id email firstName lastName avatar',
     });
 
     return updatedMember;
@@ -259,13 +192,9 @@ class TeamService {
     await this.checkTeamPermission(teamId, userId, ['OWNER', 'ADMIN']);
 
     // Cannot remove owner
-    const member = await prisma.teamMember.findUnique({
-      where: {
-        teamId_userId: {
-          teamId,
-          userId: memberId,
-        },
-      },
+    const member = await TeamMember.findOne({
+      teamId,
+      userId: memberId,
     });
 
     if (!member) {
@@ -276,13 +205,9 @@ class TeamService {
       throw new ApiError(400, 'Cannot remove team owner');
     }
 
-    await prisma.teamMember.delete({
-      where: {
-        teamId_userId: {
-          teamId,
-          userId: memberId,
-        },
-      },
+    await TeamMember.deleteOne({
+      teamId,
+      userId: memberId,
     });
 
     return true;
@@ -292,13 +217,9 @@ class TeamService {
    * Leave team
    */
   async leaveTeam(teamId, userId) {
-    const member = await prisma.teamMember.findUnique({
-      where: {
-        teamId_userId: {
-          teamId,
-          userId,
-        },
-      },
+    const member = await TeamMember.findOne({
+      teamId,
+      userId,
     });
 
     if (!member) {
@@ -309,13 +230,9 @@ class TeamService {
       throw new ApiError(400, 'Owner cannot leave the team. Transfer ownership or delete the team.');
     }
 
-    await prisma.teamMember.delete({
-      where: {
-        teamId_userId: {
-          teamId,
-          userId,
-        },
-      },
+    await TeamMember.deleteOne({
+      teamId,
+      userId,
     });
 
     return true;
@@ -325,43 +242,32 @@ class TeamService {
    * Join team with invite code
    */
   async joinTeam(userId, inviteCode) {
-    const team = await prisma.team.findUnique({
-      where: { inviteCode },
-    });
+    const team = await Team.findOne({ inviteCode });
 
     if (!team) {
       throw new ApiError(404, 'Invalid invite code');
     }
 
     // Check if already a member
-    const existingMember = await prisma.teamMember.findUnique({
-      where: {
-        teamId_userId: {
-          teamId: team.id,
-          userId,
-        },
-      },
+    const existingMember = await TeamMember.findOne({
+      teamId: team._id,
+      userId,
     });
 
     if (existingMember) {
       throw new ApiError(400, 'You are already a member of this team');
     }
 
-    const member = await prisma.teamMember.create({
-      data: {
-        teamId: team.id,
-        userId,
-        role: 'MEMBER',
-      },
-      include: {
-        team: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-          },
-        },
-      },
+    const member = new TeamMember({
+      teamId: team._id,
+      userId,
+      role: 'MEMBER',
+    });
+
+    await member.save();
+    await member.populate({
+      path: 'team',
+      select: 'id name description',
     });
 
     return member;
@@ -374,11 +280,11 @@ class TeamService {
     // Check if user is owner or admin
     await this.checkTeamPermission(teamId, userId, ['OWNER', 'ADMIN']);
 
-    const team = await prisma.team.update({
-      where: { id: teamId },
-      data: { inviteCode: nanoid(10) },
-      select: { id: true, name: true, inviteCode: true },
-    });
+    const team = await Team.findByIdAndUpdate(
+      teamId,
+      { inviteCode: nanoid(10) },
+      { new: true }
+    ).select('id name inviteCode');
 
     return team;
   }
@@ -387,13 +293,9 @@ class TeamService {
    * Helper: Check team permission
    */
   async checkTeamPermission(teamId, userId, allowedRoles) {
-    const member = await prisma.teamMember.findUnique({
-      where: {
-        teamId_userId: {
-          teamId,
-          userId,
-        },
-      },
+    const member = await TeamMember.findOne({
+      teamId,
+      userId,
     });
 
     if (!member) {

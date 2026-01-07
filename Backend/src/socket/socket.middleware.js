@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { config } from '../config/env.js';
-import { prisma } from '../config/database.js';
+import { User, ProjectMember } from '../models/index.js';
 
 /**
  * Socket.io authentication middleware
@@ -17,17 +17,9 @@ export const socketAuth = async (socket, next) => {
     const decoded = jwt.verify(token, config.jwt.accessSecret);
 
     // Get user from database
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        avatar: true,
-        role: true,
-      },
-    });
+    const user = await User.findById(decoded.userId).select(
+      'id email firstName lastName avatar role'
+    );
 
     if (!user) {
       return next(new Error('Invalid token'));
@@ -46,13 +38,9 @@ export const socketAuth = async (socket, next) => {
  * Check if user has access to a project room
  */
 export const checkProjectAccess = async (socket, projectId) => {
-  const member = await prisma.projectMember.findUnique({
-    where: {
-      projectId_userId: {
-        projectId,
-        userId: socket.user.id,
-      },
-    },
+  const member = await ProjectMember.findOne({
+    projectId,
+    userId: socket.user.id,
   });
 
   return !!member;

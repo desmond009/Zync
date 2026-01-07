@@ -26,7 +26,15 @@ const startServer = async () => {
     // Store io instance in app for access in routes
     app.set('io', io);
 
-    // Start server
+    // Start server with error handling
+    httpServer.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        logger.error(`Port ${config.port} is already in use. Please free the port or change it.`);
+        process.exit(1);
+      }
+      throw err;
+    });
+
     httpServer.listen(config.port, () => {
       logger.info(`
 ╔═══════════════════════════════════════════════════════════╗

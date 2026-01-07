@@ -1,18 +1,14 @@
-import { prisma } from '../../config/database.js';
 import { ApiError } from '../../utils/ApiError.js';
+import { Task, ProjectMember, Comment } from '../../models/index.js';
 
 class TaskService {
   async createTask(userId, taskData) {
     const { projectId, ...rest } = taskData;
 
     // Check if user has access to project
-    const projectMember = await prisma.projectMember.findUnique({
-      where: {
-        projectId_userId: {
-          projectId,
-          userId,
-        },
-      },
+    const projectMember = await ProjectMember.findOne({
+      projectId,
+      userId,
     });
 
     if (!projectMember) {
@@ -23,100 +19,46 @@ class TaskService {
       throw new ApiError(403, 'Viewers cannot create tasks');
     }
 
-    const task = await prisma.task.create({
-      data: {
-        ...rest,
-        projectId,
-        createdById: userId,
-      },
-      include: {
-        project: {
-          select: {
-            id: true,
-            name: true,
-            color: true,
-          },
-        },
-        assignedTo: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            avatar: true,
-          },
-        },
-        createdBy: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            avatar: true,
-          },
-        },
-      },
+    const task = new Task({
+      ...rest,
+      projectId,
+      createdById: userId,
     });
+
+    await task.save();
+    await task.populate([
+      { path: 'project', select: 'id name color' },
+      { path: 'assignedTo', select: 'id firstName lastName avatar' },
+      { path: 'createdBy', select: 'id firstName lastName avatar' },
+    ]);
 
     return task;
   }
 
   async getTaskById(taskId, userId) {
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
-      include: {
-        project: {
-          select: {
-            id: true,
-            name: true,
-            color: true,
-            teamId: true,
-          },
+    const task = await Task.findById(taskId).populate([
+      { path: 'project', select: 'id name color teamId' },
+      { path: 'assignedTo', select: 'id firstName lastName avatar email' },
+      { path: 'createdBy', select: 'id firstName lastName avatar' },
+      {
+        path: 'comments',
+        match: { deletedAt: null },
+        populate: {
+          path: 'userId',
+          select: 'id firstName lastName avatar',
         },
-        assignedTo: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            avatar: true,
-            email: true,
-          },
-        },
-        createdBy: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            avatar: true,
-          },
-        },
-        comments: {
-          where: { deletedAt: null },
-          include: {
-            user: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                avatar: true,
-              },
-            },
-          },
-          orderBy: { createdAt: 'asc' },
-        },
+        options: { sort: { createdAt: 1 } },
       },
-    });
+    ]);
 
     if (!task) {
       throw new ApiError(404, 'Task not found');
     }
 
     // Check if user has access to the project
-    const hasAccess = await prisma.projectMember.findUnique({
-      where: {
-        projectId_userId: {
-          projectId: task.projectId,
-          userId,
-        },
-      },
+    const hasAccess = await ProjectMember.findOne({
+      projectId: task.projectId,
+      userId,
     });
 
     if (!hasAccess) {
@@ -130,40 +72,21 @@ class TaskService {
     const task = await this.getTaskById(taskId, userId);
 
     // Check if user can edit
-    const projectMember = await prisma.projectMember.findUnique({
-      where: {
-        projectId_userId: {
-          projectId: task.projectId,
-          userId,
-        },
-      },
+    const projectMember = await ProjectMember.findOne({
+      projectId: task.projectId,
+      userId,
     });
 
     if (projectMember.role === 'VIEWER') {
       throw new ApiError(403, 'Viewers cannot edit tasks');
     }
 
-    const updatedTask = await prisma.task.update({
-      where: { id: taskId },
-      data: updateData,
-      include: {
-        project: {
-          select: {
-            id: true,
-            name: true,
-            color: true,
-          },
-        },
-        assignedTo: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            avatar: true,
-          },
-        },
-      },
-    });
+    const updatedTask = await Task.findByIdAndUpdate(taskId, updateData, {
+      new: true,
+    }).populate([
+      { path: 'project', select: 'id name color' },
+      { path: 'assignedTo', select: 'id firstName lastName avatar' },
+    ]);
 
     return updatedTask;
   }
@@ -172,22 +95,20 @@ class TaskService {
     const task = await this.getTaskById(taskId, userId);
 
     // Check if user can delete (Manager or task creator)
-    const projectMember = await prisma.projectMember.findUnique({
-      where: {
-        projectId_userId: {
-          projectId: task.projectId,
-          userId,
-        },
-      },
+    const projectMember = await ProjectMember.findOne({
+      projectId: task.projectId,
+      userId,
     });
 
-    if (projectMember.role === 'VIEWER' || (projectMember.role === 'CONTRIBUTOR' && task.createdById !== userId)) {
+    if (
+      projectMember.role === 'VIEWER' ||
+      (projectMember.role === 'CONTRIBUTOR' && task.createdById.toString() !== userId)
+    ) {
       throw new ApiError(403, 'You do not have permission to delete this task');
     }
 
-    await prisma.task.delete({
-      where: { id: taskId },
-    });
+    await Task.findByIdAndDelete(taskId);
+    await Comment.deleteMany({ taskId });
 
     return true;
   }
@@ -195,88 +116,65 @@ class TaskService {
   async createComment(taskId, userId, content) {
     const task = await this.getTaskById(taskId, userId);
 
-    const comment = await prisma.comment.create({
-      data: {
-        content,
-        taskId,
-        userId,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            avatar: true,
-          },
-        },
-      },
+    const comment = new Comment({
+      content,
+      taskId,
+      userId,
+    });
+
+    await comment.save();
+    await comment.populate({
+      path: 'userId',
+      select: 'id firstName lastName avatar',
     });
 
     return comment;
   }
 
   async updateComment(commentId, userId, content) {
-    const comment = await prisma.comment.findUnique({
-      where: { id: commentId },
-    });
+    const comment = await Comment.findById(commentId);
 
     if (!comment) {
       throw new ApiError(404, 'Comment not found');
     }
 
-    if (comment.userId !== userId) {
+    if (comment.userId.toString() !== userId) {
       throw new ApiError(403, 'You can only edit your own comments');
     }
 
-    const updatedComment = await prisma.comment.update({
-      where: { id: commentId },
-      data: { content },
-      include: {
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            avatar: true,
-          },
-        },
-      },
+    const updatedComment = await Comment.findByIdAndUpdate(
+      commentId,
+      { content },
+      { new: true }
+    ).populate({
+      path: 'userId',
+      select: 'id firstName lastName avatar',
     });
 
     return updatedComment;
   }
 
   async deleteComment(commentId, userId) {
-    const comment = await prisma.comment.findUnique({
-      where: { id: commentId },
-    });
+    const comment = await Comment.findById(commentId);
 
     if (!comment) {
       throw new ApiError(404, 'Comment not found');
     }
 
-    if (comment.userId !== userId) {
+    if (comment.userId.toString() !== userId) {
       throw new ApiError(403, 'You can only delete your own comments');
     }
 
-    await prisma.comment.update({
-      where: { id: commentId },
-      data: { deletedAt: new Date() },
-    });
+    await Comment.findByIdAndUpdate(commentId, { deletedAt: new Date() });
 
     return true;
   }
 
   async getProjectTasks(projectId, userId, filters = {}) {
     // Check access
-    const hasAccess = await prisma.projectMember.findUnique({
-      where: {
-        projectId_userId: {
-          projectId,
-          userId,
-        },
-      },
+    const hasAccess = await ProjectMember.findOne({
+      projectId,
+      userId,
     });
 
     if (!hasAccess) {
@@ -297,32 +195,12 @@ class TaskService {
       where.priority = filters.priority;
     }
 
-    const tasks = await prisma.task.findMany({
-      where,
-      include: {
-        assignedTo: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            avatar: true,
-          },
-        },
-        createdBy: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-        _count: {
-          select: {
-            comments: true,
-          },
-        },
-      },
-      orderBy: [{ position: 'asc' }, { createdAt: 'desc' }],
-    });
+    const tasks = await Task.find(where)
+      .populate([
+        { path: 'assignedTo', select: 'id firstName lastName avatar' },
+        { path: 'createdBy', select: 'id firstName lastName' },
+      ])
+      .sort({ position: 1, createdAt: -1 });
 
     return tasks;
   }

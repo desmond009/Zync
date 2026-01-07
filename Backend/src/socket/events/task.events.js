@@ -1,4 +1,4 @@
-import { prisma } from '../../config/database.js';
+import { Task, ProjectMember } from '../../models/index.js';
 
 export const setupTaskEvents = (io, socket) => {
   /**
@@ -7,22 +7,15 @@ export const setupTaskEvents = (io, socket) => {
   socket.on('task:join', async (taskId) => {
     try {
       // Verify user has access to task
-      const task = await prisma.task.findUnique({
-        where: { id: taskId },
-        include: { project: true },
-      });
+      const task = await Task.findById(taskId).populate('project');
 
       if (!task) {
         return socket.emit('error', { message: 'Task not found' });
       }
 
-      const hasAccess = await prisma.projectMember.findUnique({
-        where: {
-          projectId_userId: {
-            projectId: task.projectId,
-            userId: socket.user.id,
-          },
-        },
+      const hasAccess = await ProjectMember.findOne({
+        projectId: task.projectId,
+        userId: socket.user.id,
       });
 
       if (!hasAccess) {

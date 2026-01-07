@@ -3,11 +3,12 @@ import Redis from 'ioredis';
 class RedisClient {
   constructor() {
     if (!RedisClient.instance) {
-      this.client = new Redis({
+      const redisConfig = {
         host: process.env.REDIS_HOST || 'localhost',
         port: parseInt(process.env.REDIS_PORT, 10) || 6379,
-        password: process.env.REDIS_PASSWORD || undefined,
         maxRetriesPerRequest: 3,
+        enableReadyCheck: false,
+        enableOfflineQueue: true,
         retryStrategy: (times) => {
           const delay = Math.min(times * 50, 2000);
           return delay;
@@ -19,7 +20,17 @@ class RedisClient {
           }
           return false;
         },
-      });
+      };
+
+      // Add authentication only if credentials are provided
+      if (process.env.REDIS_PASSWORD) {
+        redisConfig.password = process.env.REDIS_PASSWORD;
+        if (process.env.REDIS_USERNAME) {
+          redisConfig.username = process.env.REDIS_USERNAME;
+        }
+      }
+
+      this.client = new Redis(redisConfig);
 
       this.client.on('connect', () => {
         console.log('✅ Redis connected successfully');

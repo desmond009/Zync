@@ -1,4 +1,4 @@
-import { prisma } from '../../config/database.js';
+import { User, ProjectMember } from '../../models/index.js';
 
 export const setupPresenceEvents = (io, socket) => {
   /**
@@ -7,16 +7,14 @@ export const setupPresenceEvents = (io, socket) => {
   socket.on('presence:online', async () => {
     try {
       // Update user's last seen
-      await prisma.user.update({
-        where: { id: socket.user.id },
-        data: { lastSeenAt: new Date() },
+      await User.findByIdAndUpdate(socket.user.id, {
+        lastSeenAt: new Date(),
       });
 
       // Get user's projects
-      const projectMemberships = await prisma.projectMember.findMany({
-        where: { userId: socket.user.id },
-        select: { projectId: true },
-      });
+      const projectMemberships = await ProjectMember.find({
+        userId: socket.user.id,
+      }).select('projectId');
 
       // Broadcast to all user's projects
       projectMemberships.forEach((membership) => {
@@ -36,16 +34,14 @@ export const setupPresenceEvents = (io, socket) => {
   socket.on('disconnect', async () => {
     try {
       // Update user's last seen
-      await prisma.user.update({
-        where: { id: socket.user.id },
-        data: { lastSeenAt: new Date() },
+      await User.findByIdAndUpdate(socket.user.id, {
+        lastSeenAt: new Date(),
       });
 
       // Get user's projects
-      const projectMemberships = await prisma.projectMember.findMany({
-        where: { userId: socket.user.id },
-        select: { projectId: true },
-      });
+      const projectMemberships = await ProjectMember.find({
+        userId: socket.user.id,
+      }).select('projectId');
 
       // Broadcast to all user's projects
       projectMemberships.forEach((membership) => {

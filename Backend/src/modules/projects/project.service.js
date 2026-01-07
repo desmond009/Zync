@@ -1,5 +1,5 @@
-import { prisma } from '../../config/database.js';
 import { ApiError } from '../../utils/ApiError.js';
+import { Project, ProjectMember, TeamMember, Task } from '../../models/index.js';
 
 class ProjectService {
   /**
@@ -9,54 +9,44 @@ class ProjectService {
     const { name, description, teamId, color } = projectData;
 
     // Check if user is team member
-    const teamMember = await prisma.teamMember.findUnique({
-      where: {
-        teamId_userId: {
-          teamId,
-          userId,
-        },
-      },
+    const teamMember = await TeamMember.findOne({
+      teamId,
+      userId,
     });
 
     if (!teamMember) {
       throw new ApiError(403, 'You are not a member of this team');
     }
 
-    const project = await prisma.project.create({
-      data: {
-        name,
-        description,
-        teamId,
-        color: color || '#3B82F6',
-        members: {
-          create: {
-            userId,
-            role: 'MANAGER',
-          },
-        },
-      },
-      include: {
-        team: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        members: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                email: true,
-                firstName: true,
-                lastName: true,
-                avatar: true,
-              },
-            },
-          },
-        },
-      },
+    const project = new Project({
+      name,
+      description,
+      teamId,
+      color: color || '#3B82F6',
     });
+
+    await project.save();
+
+    // Add user as project manager
+    const projectMember = new ProjectMember({
+      projectId: project._id,
+      userId,
+      role: 'MANAGER',
+    });
+
+    await projectMember.save();
+
+    // Populate and return
+    await project.populate([
+      { path: 'team', select: 'id name' },
+      {
+        path: 'members',
+        populate: {
+          path: 'userId',
+          select: 'id email firstName lastName avatar',
+        },
+      },
+    ]);
 
     return project;
   }
@@ -65,57 +55,33 @@ class ProjectService {
    * Get project by ID
    */
   async getProjectById(projectId, userId) {
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
-      include: {
-        team: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        members: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                email: true,
-                firstName: true,
-                lastName: true,
-                avatar: true,
-              },
-            },
-          },
-        },
-        tasks: {
-          include: {
-            assignedTo: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                avatar: true,
-              },
-            },
-          },
-          orderBy: [{ position: 'asc' }, { createdAt: 'desc' }],
-        },
-        _count: {
-          select: {
-            tasks: true,
-            members: true,
-            messages: true,
-          },
+    const project = await Project.findById(projectId).populate([
+      { path: 'team', select: 'id name' },
+      {
+        path: 'members',
+        populate: {
+          path: 'userId',
+          select: 'id email firstName lastName avatar',
         },
       },
-    });
+      {
+        path: 'tasks',
+        populate: {
+          path: 'assignedTo',
+          select: 'id firstName lastName avatar',
+        },
+        options: { sort: { position: 1, createdAt: -1 } },
+      },
+    ]);
 
     if (!project) {
       throw new ApiError(404, 'Project not found');
     }
 
     // Check if user is a project member
-    const isMember = project.members.some((member) => member.userId === userId);
+    const isMember = project.members.some(
+      (member) => member.userId._id.toString() === userId
+    );
     if (!isMember) {
       throw new ApiError(403, 'You do not have access to this project');
     }
@@ -129,9 +95,8 @@ class ProjectService {
   async updateProject(projectId, userId, updateData) {
     await this.checkProjectPermission(projectId, userId, ['MANAGER']);
 
-    const project = await prisma.project.update({
-      where: { id: projectId },
-      data: updateData,
+    const project = await Project.findByIdAndUpdate(projectId, updateData, {
+      new: true,
     });
 
     return project;
@@ -143,9 +108,9 @@ class ProjectService {
   async deleteProject(projectId, userId) {
     await this.checkProjectPermission(projectId, userId, ['MANAGER']);
 
-    await prisma.project.delete({
-      where: { id: projectId },
-    });
+    await Project.findByIdAndDelete(projectId);
+    await ProjectMember.deleteMany({ projectId });
+    await Task.deleteMany({ projectId });
 
     return true;
   }
@@ -157,36 +122,25 @@ class ProjectService {
     await this.checkProjectPermission(projectId, userId, ['MANAGER']);
 
     // Check if user is already a member
-    const existingMember = await prisma.projectMember.findUnique({
-      where: {
-        projectId_userId: {
-          projectId,
-          userId: memberUserId,
-        },
-      },
+    const existingMember = await ProjectMember.findOne({
+      projectId,
+      userId: memberUserId,
     });
 
     if (existingMember) {
       throw new ApiError(400, 'User is already a project member');
     }
 
-    const member = await prisma.projectMember.create({
-      data: {
-        projectId,
-        userId: memberUserId,
-        role,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            avatar: true,
-          },
-        },
-      },
+    const member = new ProjectMember({
+      projectId,
+      userId: memberUserId,
+      role,
+    });
+
+    await member.save();
+    await member.populate({
+      path: 'userId',
+      select: 'id email firstName lastName avatar',
     });
 
     return member;
@@ -198,25 +152,16 @@ class ProjectService {
   async updateProjectMemberRole(projectId, userId, memberId, newRole) {
     await this.checkProjectPermission(projectId, userId, ['MANAGER']);
 
-    const member = await prisma.projectMember.update({
-      where: {
-        projectId_userId: {
-          projectId,
-          userId: memberId,
-        },
+    const member = await ProjectMember.findOneAndUpdate(
+      {
+        projectId,
+        userId: memberId,
       },
-      data: { role: newRole },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            avatar: true,
-          },
-        },
-      },
+      { role: newRole },
+      { new: true }
+    ).populate({
+      path: 'userId',
+      select: 'id email firstName lastName avatar',
     });
 
     return member;
@@ -228,13 +173,9 @@ class ProjectService {
   async removeProjectMember(projectId, userId, memberId) {
     await this.checkProjectPermission(projectId, userId, ['MANAGER']);
 
-    await prisma.projectMember.delete({
-      where: {
-        projectId_userId: {
-          projectId,
-          userId: memberId,
-        },
-      },
+    await ProjectMember.deleteOne({
+      projectId,
+      userId: memberId,
     });
 
     return true;
@@ -246,29 +187,22 @@ class ProjectService {
   async getProjectMessages(projectId, userId, cursor = null, limit = 50) {
     await this.checkProjectPermission(projectId, userId);
 
-    const messages = await prisma.message.findMany({
-      where: { projectId },
-      include: {
-        sender: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            avatar: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: limit + 1,
-      ...(cursor && {
-        cursor: { id: cursor },
-        skip: 1,
-      }),
-    });
+    const query = { projectId };
+    if (cursor) {
+      query._id = { $lt: cursor };
+    }
+
+    const messages = await Message.find(query)
+      .populate({
+        path: 'sender',
+        select: 'id firstName lastName avatar',
+      })
+      .sort({ createdAt: -1 })
+      .limit(limit + 1);
 
     const hasMore = messages.length > limit;
     const data = hasMore ? messages.slice(0, -1) : messages;
-    const nextCursor = hasMore ? data[data.length - 1].id : null;
+    const nextCursor = hasMore ? data[data.length - 1]._id : null;
 
     return { messages: data, nextCursor, hasMore };
   }
@@ -277,13 +211,9 @@ class ProjectService {
    * Helper: Check project permission
    */
   async checkProjectPermission(projectId, userId, allowedRoles = null) {
-    const member = await prisma.projectMember.findUnique({
-      where: {
-        projectId_userId: {
-          projectId,
-          userId,
-        },
-      },
+    const member = await ProjectMember.findOne({
+      projectId,
+      userId,
     });
 
     if (!member) {

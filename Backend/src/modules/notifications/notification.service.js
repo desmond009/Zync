@@ -1,17 +1,16 @@
-import { prisma } from '../../config/database.js';
 import { ApiError } from '../../utils/ApiError.js';
 import { getPaginationMeta, getSkip } from '../../utils/pagination.js';
+import { Notification } from '../../models/index.js';
 
 class NotificationService {
   async createNotification(userId, type, content) {
-    const notification = await prisma.notification.create({
-      data: {
-        userId,
-        type,
-        content,
-      },
+    const notification = new Notification({
+      userId,
+      type,
+      content,
     });
 
+    await notification.save();
     return notification;
   }
 
@@ -24,13 +23,11 @@ class NotificationService {
     }
 
     const [notifications, total] = await Promise.all([
-      prisma.notification.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-      }),
-      prisma.notification.count({ where }),
+      Notification.find(where)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Notification.countDocuments(where),
     ]);
 
     const pagination = getPaginationMeta(total, page, limit);
@@ -39,64 +36,57 @@ class NotificationService {
   }
 
   async markAsRead(notificationId, userId) {
-    const notification = await prisma.notification.findUnique({
-      where: { id: notificationId },
-    });
+    const notification = await Notification.findById(notificationId);
 
     if (!notification) {
       throw new ApiError(404, 'Notification not found');
     }
 
-    if (notification.userId !== userId) {
+    if (notification.userId.toString() !== userId) {
       throw new ApiError(403, 'You can only mark your own notifications as read');
     }
 
-    const updated = await prisma.notification.update({
-      where: { id: notificationId },
-      data: { isRead: true },
-    });
+    const updated = await Notification.findByIdAndUpdate(
+      notificationId,
+      { isRead: true },
+      { new: true }
+    );
 
     return updated;
   }
 
   async markAllAsRead(userId) {
-    await prisma.notification.updateMany({
-      where: {
+    await Notification.updateMany(
+      {
         userId,
         isRead: false,
       },
-      data: { isRead: true },
-    });
+      { isRead: true }
+    );
 
     return true;
   }
 
   async deleteNotification(notificationId, userId) {
-    const notification = await prisma.notification.findUnique({
-      where: { id: notificationId },
-    });
+    const notification = await Notification.findById(notificationId);
 
     if (!notification) {
       throw new ApiError(404, 'Notification not found');
     }
 
-    if (notification.userId !== userId) {
+    if (notification.userId.toString() !== userId) {
       throw new ApiError(403, 'You can only delete your own notifications');
     }
 
-    await prisma.notification.delete({
-      where: { id: notificationId },
-    });
+    await Notification.findByIdAndDelete(notificationId);
 
     return true;
   }
 
   async getUnreadCount(userId) {
-    const count = await prisma.notification.count({
-      where: {
-        userId,
-        isRead: false,
-      },
+    const count = await Notification.countDocuments({
+      userId,
+      isRead: false,
     });
 
     return count;

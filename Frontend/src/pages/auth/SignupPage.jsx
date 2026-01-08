@@ -11,10 +11,12 @@ import FormInput from '../../components/auth/FormInput';
 import PasswordRequirements from '../../components/auth/PasswordRequirements';
 import SubmitButton from '../../components/auth/SubmitButton';
 import FormFooter from '../../components/auth/FormFooter';
+import { useAuthStore } from '../../store/authStore';
 import api from '../../services/api';
 
 export default function SignupPage() {
   const navigate = useNavigate();
+  const register = useAuthStore(state => state.register);
   const isDark = document.documentElement.classList.contains('dark');
 
   const [step, setStep] = useState(1);
@@ -41,14 +43,15 @@ export default function SignupPage() {
     }
 
     const hasUppercase = /[A-Z]/.test(formData.password);
+    const hasLowercase = /[a-z]/.test(formData.password);
     const hasNumber = /\d/.test(formData.password);
-    const hasSpecial = /[!@#$%^&*()_+-=\[\]{};':"\\|,.<>\/?]/.test(formData.password);
+    const hasSpecial = /[@$!%*?&]/.test(formData.password);
     const isLongEnough = formData.password.length >= 8;
 
-    const strength = [hasUppercase, hasNumber, hasSpecial, isLongEnough].filter(Boolean).length;
+    const strength = [hasUppercase, hasLowercase, hasNumber, hasSpecial, isLongEnough].filter(Boolean).length;
 
-    if (strength <= 1) setPasswordStrength('weak');
-    else if (strength <= 2) setPasswordStrength('medium');
+    if (strength <= 2) setPasswordStrength('weak');
+    else if (strength <= 3) setPasswordStrength('medium');
     else setPasswordStrength('strong');
   }, [formData.password]);
 
@@ -69,9 +72,10 @@ export default function SignupPage() {
     if (!password) return 'Password is required';
     if (password.length < 8) return 'Password must be at least 8 characters';
     if (!/[A-Z]/.test(password)) return 'Password must contain at least one uppercase letter';
+    if (!/[a-z]/.test(password)) return 'Password must contain at least one lowercase letter';
     if (!/\d/.test(password)) return 'Password must contain at least one number';
-    if (!/[!@#$%^&*()_+-=\[\]{};':"\\|,.<>\/?]/.test(password)) 
-      return 'Password must contain at least one special character';
+    if (!/[@$!%*?&]/.test(password)) 
+      return 'Password must contain at least one special character (@$!%*?&)';
     return '';
   };
 
@@ -160,25 +164,18 @@ export default function SignupPage() {
     setIsLoading(true);
 
     try {
-      const response = await api.post('/auth/register', {
-        name: formData.fullName,
-        email: formData.email,
-        password: formData.password,
-        workspaceName: formData.workspaceName,
-      });
+      // Split full name into firstName and lastName for backend
+      const nameParts = formData.fullName.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || nameParts[0]; // Use first name as last if only one word
 
-      if (response.data.accessToken) {
-        localStorage.setItem('accessToken', response.data.accessToken);
-        localStorage.setItem('refreshToken', response.data.refreshToken || '');
-      }
+      await register(firstName, lastName, formData.email, formData.password);
 
       toast.success('Account created! Welcome to Zync!', {
         duration: 2,
       });
 
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 1500);
+      navigate('/app/dashboard');
     } catch (error) {
       const message = error.response?.data?.message || 'Signup failed. Please try again.';
       toast.error(message);

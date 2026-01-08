@@ -11,10 +11,11 @@ import FormInput from '../../components/auth/FormInput';
 import RememberMe from '../../components/auth/RememberMe';
 import SubmitButton from '../../components/auth/SubmitButton';
 import FormFooter from '../../components/auth/FormFooter';
-import api from '../../services/api';
+import { useAuthStore } from '../../store/authStore';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const login = useAuthStore(state => state.login);
   const isDark = document.documentElement.classList.contains('dark');
 
   const [formData, setFormData] = useState({
@@ -100,16 +101,8 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await api.post('/auth/login', {
-        email: formData.email,
-        password: formData.password,
-      });
-
-      // Save tokens
-      if (response.data.accessToken) {
-        localStorage.setItem('accessToken', response.data.accessToken);
-        localStorage.setItem('refreshToken', response.data.refreshToken || '');
-      }
+      // Use auth store login method to update global state
+      await login(formData.email, formData.password);
 
       // Remember email if checked
       if (formData.rememberMe) {
@@ -119,14 +112,12 @@ export default function LoginPage() {
       }
 
       toast.success('Welcome back!', {
-        duration: 2,
+        duration: 1500,
         position: 'top-right',
       });
 
-      // Redirect after short delay
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 1500);
+      // Redirect immediately since auth state is updated
+      navigate('/app/dashboard');
     } catch (error) {
       const message = error.response?.data?.message || 'Login failed. Please try again.';
       toast.error(message);

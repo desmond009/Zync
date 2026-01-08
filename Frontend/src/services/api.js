@@ -1,7 +1,20 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  // IMPORTANT:
+  // Backend mounts routes at `/api/${API_VERSION}` (default: v1).
+  // Using a relative baseURL ensures requests go through the Vite dev proxy
+  // and prevents accidental calls to stale host/ports (e.g. :5000).
+  baseURL: '/api/v1',
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// A separate client for token refresh to avoid interceptor recursion.
+const refreshClient = axios.create({
+  baseURL: '/api/v1',
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -31,14 +44,13 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const { data } = await axios.post(
-          `${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/auth/refresh-token`,
-          {},
-          { withCredentials: true }
-        );
+        const { data } = await refreshClient.post('/auth/refresh', {});
 
-        localStorage.setItem('accessToken', data.data.accessToken);
-        originalRequest.headers.Authorization = `Bearer ${data.data.accessToken}`;
+        const accessToken = data?.data?.accessToken;
+        if (accessToken) {
+          localStorage.setItem('accessToken', accessToken);
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        }
         
         return api(originalRequest);
       } catch (refreshError) {

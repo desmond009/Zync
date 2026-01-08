@@ -18,13 +18,18 @@ export const generalLimiter = rateLimit({
 
 /**
  * Strict rate limiter for authentication routes
+ * DEVELOPMENT: Set to very high limits for testing
  */
 export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 requests per window
+  windowMs: config.isDevelopment ? 60 * 1000 : 15 * 60 * 1000, // 1 min in dev, 15 min in prod
+  max: config.isDevelopment ? 1000 : 5, // 1000 requests in dev, 5 in prod
   message: 'Too many authentication attempts, please try again later',
   skipSuccessfulRequests: true,
   handler: (req, res, next) => {
+    if (config.isDevelopment) {
+      // Skip rate limiting in development
+      return next();
+    }
     throw new ApiError(429, 'Too many authentication attempts, please try again after 15 minutes');
   },
 });
@@ -33,10 +38,13 @@ export const authLimiter = rateLimit({
  * Rate limiter for password reset requests
  */
 export const passwordResetLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3, // 3 requests per hour
+  windowMs: config.isDevelopment ? 60 * 1000 : 60 * 60 * 1000, // 1 min in dev, 1 hour in prod
+  max: config.isDevelopment ? 1000 : 3, // 1000 in dev, 3 in prod
   message: 'Too many password reset requests',
   handler: (req, res, next) => {
+    if (config.isDevelopment) {
+      return next();
+    }
     throw new ApiError(429, 'Too many password reset attempts, please try again after 1 hour');
   },
 });
@@ -45,9 +53,12 @@ export const passwordResetLimiter = rateLimit({
  * Rate limiter for email verification requests
  */
 export const emailVerificationLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3, // 3 requests per hour
+  windowMs: config.isDevelopment ? 60 * 1000 : 60 * 60 * 1000, // 1 min in dev, 1 hour in prod
+  max: config.isDevelopment ? 1000 : 3, // 1000 in dev, 3 in prod
   handler: (req, res, next) => {
+    if (config.isDevelopment) {
+      return next();
+    }
     throw new ApiError(429, 'Too many verification emails sent, please try again after 1 hour');
   },
 });

@@ -10,7 +10,9 @@ class SocketService {
   connect(token) {
     if (this.socket?.connected) return;
 
-    this.socket = io(import.meta.env.VITE_API_URL || 'http://localhost:3000', {
+    // Use same-origin so Vite dev proxy can forward `/socket.io` to the backend.
+    // This avoids hardcoding ports (and prevents stale :5000 usage).
+    this.socket = io(window.location.origin, {
       auth: { token },
       transports: ['websocket', 'polling'],
       reconnection: true,

@@ -13,6 +13,8 @@ import { DashboardLayout } from './layouts/DashboardLayout';
 // Auth pages
 import { Login } from './pages/auth/Login';
 import { Register } from './pages/auth/Register';
+import LoginPage from './pages/auth/LoginPage';
+import SignupPage from './pages/auth/SignupPage';
 
 // Main pages
 import { Dashboard } from './pages/Dashboard';
@@ -66,9 +68,13 @@ function App() {
         {/* Landing Page */}
         <Route path="/" element={<LandingPage />} />
         
-        {/* Public routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        {/* Auth routes - Old versions */}
+        <Route path="/login-old" element={<Login />} />
+        <Route path="/register-old" element={<Register />} />
+
+        {/* Auth routes - New modern versions */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
 
         {/* Protected routes */}
         <Route
@@ -86,6 +92,9 @@ function App() {
           <Route path="chat" element={<div className="glass rounded-2xl p-8"><h1 className="text-3xl font-bold gradient-text">Chat (Coming Soon)</h1></div>} />
           <Route path="team" element={<div className="glass rounded-2xl p-8"><h1 className="text-3xl font-bold gradient-text">Team (Coming Soon)</h1></div>} />
         </Route>
+
+        {/* Fallback: redirect /dashboard to /app/dashboard */}
+        <Route path="/dashboard" element={<Navigate to="/app/dashboard" replace />} />
 
         {/* Catch all */}
         <Route path="*" element={<Navigate to="/" replace />} />

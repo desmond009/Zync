@@ -1,6 +1,6 @@
 import express from 'express';
 import activityController from './activity.controller.js';
-import { authMiddleware } from '../../middleware/auth.middleware.js';
+import { authenticate as authMiddleware } from '../../middleware/auth.middleware.js';
 
 const router = express.Router();
 

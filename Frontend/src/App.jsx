@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useAuthStore } from './store/authStore';
-import { socketService } from './services/socket';
+import { SocketProvider } from './contexts/SocketContext';
 
 // Landing Page
 import { LandingPage } from './components/landing';
@@ -46,27 +46,14 @@ const ProtectedRoute = ({ children }) => {
 };
 
 function App() {
-  const { initialize, isAuthenticated, user } = useAuthStore();
+  const { initialize } = useAuthStore();
 
   useEffect(() => {
     initialize();
   }, []);
 
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      const token = localStorage.getItem('accessToken');
-      if (token) {
-        socketService.connect(token);
-      }
-
-      return () => {
-        socketService.disconnect();
-      };
-    }
-  }, [isAuthenticated, user]);
-
   return (
-    <>
+    <SocketProvider>
       <Routes>
         {/* Landing Page */}
         <Route path="/" element={<LandingPage />} />
@@ -132,7 +119,7 @@ function App() {
           },
         }}
       />
-    </>
+    </SocketProvider>
   );
 }
 

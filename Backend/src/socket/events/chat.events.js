@@ -171,5 +171,3 @@ export const setupChatEvents = (io, socket) => {
     }
   });
 };
-  });
-};

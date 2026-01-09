@@ -1,4 +1,4 @@
-import asyncHandler from '../../utils/asyncHandler.js';
+import { asyncHandler } from '../../utils/asyncHandler.js';
 import activityService from './activity.service.js';
 import { sendSuccess } from '../../utils/ApiResponse.js';
 

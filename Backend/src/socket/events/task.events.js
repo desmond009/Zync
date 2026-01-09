@@ -1,5 +1,5 @@
 import { Task, ProjectMember } from '../../models/index.js';
-import { validateRole } from '../middleware/team.middleware.js';
+import { checkTeamAccess as teamMiddleware } from '../../middleware/team.middleware.js';
 
 export const setupTaskEvents = (io, socket) => {
   /**
@@ -47,7 +47,7 @@ export const setupTaskEvents = (io, socket) => {
 
       // Validate team membership and role
       const member = await ProjectMember.findOne({ projectId, userId: socket.user.id });
-      if (!member || !validateRole(member.role, 'MEMBER')) {
+      if (!member || !teamMiddleware.validateRole(member.role, 'MEMBER')) {
         return ack({ success: false, error: 'Unauthorized' });
       }
 
@@ -94,7 +94,7 @@ export const setupTaskEvents = (io, socket) => {
       }
 
       const member = await ProjectMember.findOne({ projectId: task.projectId, userId: socket.user.id });
-      if (!member || !validateRole(member.role, 'MEMBER')) {
+      if (!member || !teamMiddleware.validateRole(member.role, 'MEMBER')) {
         return ack({ success: false, error: 'Unauthorized' });
       }
 
@@ -128,7 +128,7 @@ export const setupTaskEvents = (io, socket) => {
       }
 
       const member = await ProjectMember.findOne({ projectId: task.projectId, userId: socket.user.id });
-      if (!member || !validateRole(member.role, 'ADMIN')) {
+      if (!member || !teamMiddleware.validateRole(member.role, 'ADMIN')) {
         return ack({ success: false, error: 'Unauthorized' });
       }
 

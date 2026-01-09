@@ -105,36 +105,6 @@ export const usersAPI = {
     api.get('/users/search', { params: { query } }),
 };
 
-// Teams API
-export const teamsAPI = {
-  getAll: () =>
-    api.get('/teams'),
-  
-  getById: (id) =>
-    api.get(`/teams/${id}`),
-  
-  create: (data) =>
-    api.post('/teams', data),
-  
-  update: (id, data) =>
-    api.patch(`/teams/${id}`, data),
-  
-  delete: (id) =>
-    api.delete(`/teams/${id}`),
-  
-  getMembers: (id) =>
-    api.get(`/teams/${id}/members`),
-  
-  inviteMember: (id, data) =>
-    api.post(`/teams/${id}/invite`, data),
-  
-  removeMember: (teamId, memberId) =>
-    api.delete(`/teams/${teamId}/members/${memberId}`),
-  
-  updateMemberRole: (teamId, memberId, role) =>
-    api.patch(`/teams/${teamId}/members/${memberId}`, { role }),
-};
-
 // Projects API
 export const projectsAPI = {
   getAll: (teamId) =>
@@ -213,6 +183,66 @@ export const notificationsAPI = {
   
   delete: (id) =>
     api.delete(`/notifications/${id}`),
+};
+
+// Teams API
+export const teamsAPI = {
+  getUserTeams: () =>
+    api.get('/teams'),
+  
+  getTeamById: (teamId) =>
+    api.get(`/teams/${teamId}`),
+  
+  createTeam: (data) =>
+    api.post('/teams', data),
+  
+  updateTeam: (teamId, data) =>
+    api.patch(`/teams/${teamId}`, data),
+  
+  deleteTeam: (teamId) =>
+    api.delete(`/teams/${teamId}`),
+  
+  getTeamStats: (teamId) =>
+    api.get(`/teams/${teamId}/stats`),
+  
+  updateTeamSettings: (teamId, settings) =>
+    api.patch(`/teams/${teamId}/settings`, settings),
+  
+  transferOwnership: (teamId, newOwnerId) =>
+    api.post(`/teams/${teamId}/transfer-ownership`, { newOwnerId }),
+  
+  regenerateInviteCode: (teamId) =>
+    api.post(`/teams/${teamId}/regenerate-invite`),
+  
+  // Member management
+  inviteMember: (teamId, email, role) =>
+    api.post(`/teams/${teamId}/invite`, { email, role }),
+  
+  inviteMemberByEmail: (teamId, email, role) =>
+    api.post(`/teams/${teamId}/invite-email`, { email, role }),
+  
+  updateMemberRole: (teamId, memberId, role) =>
+    api.patch(`/teams/${teamId}/members/${memberId}`, { role }),
+  
+  removeMember: (teamId, memberId) =>
+    api.delete(`/teams/${teamId}/members/${memberId}`),
+  
+  leaveTeam: (teamId) =>
+    api.post(`/teams/${teamId}/leave`),
+  
+  // Invite code
+  joinTeam: (inviteCode) =>
+    api.post('/teams/join', { inviteCode }),
+  
+  // Email invitations
+  acceptInvitation: (token) =>
+    api.post(`/teams/accept-invite/${token}`),
+  
+  getTeamInvitations: (teamId) =>
+    api.get(`/teams/${teamId}/invitations`),
+  
+  cancelInvitation: (teamId, invitationId) =>
+    api.delete(`/teams/${teamId}/invitations/${invitationId}`),
 };
 
 export default api;

@@ -23,16 +23,11 @@ export const authenticate = asyncHandler(async (req, res, next) => {
 
     // Get user from database
     const user = await User.findById(decoded.userId).select(
-      'id email firstName lastName avatar role isEmailVerified'
+      'id email firstName lastName avatar role'
     );
 
     if (!user) {
       throw new ApiError(401, 'Invalid access token');
-    }
-
-    // Check if email is verified (optional, depending on requirements)
-    if (!user.isEmailVerified && req.path !== '/auth/verify-email') {
-      throw new ApiError(403, 'Please verify your email to continue');
     }
 
     // Attach user to request

@@ -1,11 +1,13 @@
 import { Server } from 'socket.io';
 import { config } from '../config/env.js';
-import redisClient from '../config/redis.js';
 import { socketAuth, checkProjectAccess } from './socket.middleware.js';
 import { setupTaskEvents } from './events/task.events.js';
 import { setupChatEvents } from './events/chat.events.js';
 import { setupPresenceEvents } from './events/presence.events.js';
 import { setupNotificationEvents } from './events/notification.events.js';
+import { setupTeamEvents } from './events/team.events.js';
+import { createAdapter } from '@socket.io/redis-adapter';
+import redisClient from '../config/redis.js';
 
 /**
  * Initialize Socket.io server
@@ -19,6 +21,11 @@ export const initializeSocketIO = (httpServer) => {
     },
     transports: ['websocket', 'polling'],
   });
+
+  // Apply Redis adapter for horizontal scaling
+  const pubClient = redisClient.getClient();
+  const subClient = pubClient.duplicate();
+  io.adapter(createAdapter(pubClient, subClient));
 
   // Apply authentication middleware
   io.use(socketAuth);
@@ -71,6 +78,7 @@ export const initializeSocketIO = (httpServer) => {
     setupChatEvents(io, socket);
     setupPresenceEvents(io, socket);
     setupNotificationEvents(io, socket);
+    setupTeamEvents(io, socket);
 
     /**
      * Handle disconnection

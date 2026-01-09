@@ -148,6 +148,71 @@ class SocketService {
     this.on('notification:new', callback);
   }
 
+  // Team events
+  joinTeam(teamId) {
+    if (this.socket) {
+      this.socket.emit('team:join', teamId);
+    }
+  }
+
+  leaveTeam(teamId) {
+    if (this.socket) {
+      this.socket.emit('team:leave', teamId);
+    }
+  }
+
+  onTeamMemberAdded(callback) {
+    this.on('team:member-added', callback);
+  }
+
+  onTeamMemberRemoved(callback) {
+    this.on('team:member-removed', callback);
+  }
+
+  onTeamMemberRoleUpdated(callback) {
+    this.on('team:member-role-updated', callback);
+  }
+
+  onTeamUpdated(callback) {
+    this.on('team:updated', callback);
+  }
+
+  onTeamSettingsUpdated(callback) {
+    this.on('team:settings-updated', callback);
+  }
+
+  onOwnershipTransferred(callback) {
+    this.on('team:ownership-transferred', callback);
+  }
+
+  onTeamDeleted(callback) {
+    this.on('team:deleted', callback);
+  }
+
+  onTeamMemberOnline(callback) {
+    this.on('team:member-online', callback);
+  }
+
+  onTeamMemberOffline(callback) {
+    this.on('team:member-offline', callback);
+  }
+
+  onTeamOnlineCount(callback) {
+    this.on('team:online-count', callback);
+  }
+
+  startTypingInTeam(teamId, projectId) {
+    if (this.socket) {
+      this.socket.emit('team:typing', { teamId, projectId });
+    }
+  }
+
+  stopTypingInTeam(teamId, projectId) {
+    if (this.socket) {
+      this.socket.emit('team:stop-typing', { teamId, projectId });
+    }
+  }
+
   // Generic event listeners
   on(event, callback) {
     if (this.socket) {

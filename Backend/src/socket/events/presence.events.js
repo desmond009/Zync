@@ -33,28 +33,26 @@ export const setupPresenceEvents = (io, socket) => {
    */
   socket.on('disconnect', async () => {
     try {
+      const timestamp = new Date();
       // Update user's last seen
       await User.findByIdAndUpdate(socket.user.id, {
-        lastSeenAt: new Date(),
+        lastSeenAt: timestamp,
       });
 
-      // Get user's projects
-      const projectMemberships = await ProjectMember.find({
-        userId: socket.user.id,
-      }).select('projectId');
+      // Get rooms the socket is currently in
+      const rooms = Array.from(socket.rooms).filter((room) => room.startsWith('project:'));
 
-      // Broadcast to all user's projects
-      projectMemberships.forEach((membership) => {
-        io.to(`project:${membership.projectId}`).emit('presence:offline', {
+      // Broadcast to all user's project rooms
+      rooms.forEach((room) => {
+        io.to(room).emit('presence:offline', {
           userId: socket.user.id,
-          userName: `${socket.user.firstName} ${socket.user.lastName}`,
-          lastSeenAt: new Date(),
+          lastSeenAt: timestamp,
         });
       });
 
       console.log(`User ${socket.user.id} disconnected`);
     } catch (error) {
-      console.error('Presence offline error:', error);
+      console.error('Presence disconnect error:', error);
     }
   });
 

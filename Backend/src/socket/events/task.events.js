@@ -38,39 +38,97 @@ export const setupTaskEvents = (io, socket) => {
   });
 
   /**
-   * Task created event
+   * Create task
    */
-  socket.on('task:created', (data) => {
-    io.to(`project:${data.projectId}`).emit('task:created', data);
+  socket.on('task:create', async (data, ack) => {
+    try {
+      const { projectId, ...taskData } = data;
+
+      // Authorization check
+      const member = await ProjectMember.findOne({ projectId, userId: socket.user.id });
+      if (!member || member.role === 'VIEWER') {
+        return ack({ success: false, error: 'Unauthorized' });
+      }
+
+      // Create task in DB
+      const task = new Task({ ...taskData, projectId, createdById: socket.user.id });
+      await task.save();
+      await task.populate(['project', 'assignedTo', 'createdBy']);
+
+      // Broadcast committed state
+      io.to(`project:${projectId}`).emit('task:created', task);
+
+      // Acknowledge success
+      ack({ success: true, task });
+    } catch (error) {
+      console.error('Task creation error:', error);
+      ack({ success: false, error: 'Failed to create task' });
+    }
   });
 
   /**
-   * Task updated event
+   * Update task
    */
-  socket.on('task:updated', (data) => {
-    io.to(`project:${data.projectId}`).emit('task:updated', data);
-    io.to(`task:${data.taskId}`).emit('task:updated', data);
+  socket.on('task:update', async (data, ack) => {
+    try {
+      const { taskId, ...updateData } = data;
+
+      // Fetch task and check authorization
+      const task = await Task.findById(taskId);
+      if (!task) {
+        return ack({ success: false, error: 'Task not found' });
+      }
+
+      const member = await ProjectMember.findOne({ projectId: task.projectId, userId: socket.user.id });
+      if (!member || member.role === 'VIEWER') {
+        return ack({ success: false, error: 'Unauthorized' });
+      }
+
+      // Update task in DB
+      Object.assign(task, updateData);
+      await task.save();
+      await task.populate(['project', 'assignedTo', 'createdBy']);
+
+      // Broadcast committed state
+      io.to(`project:${task.projectId}`).emit('task:updated', task);
+
+      // Acknowledge success
+      ack({ success: true, task });
+    } catch (error) {
+      console.error('Task update error:', error);
+      ack({ success: false, error: 'Failed to update task' });
+    }
   });
 
   /**
-   * Task deleted event
+   * Delete task
    */
-  socket.on('task:deleted', (data) => {
-    io.to(`project:${data.projectId}`).emit('task:deleted', data);
-  });
+  socket.on('task:delete', async (data, ack) => {
+    try {
+      const { taskId } = data;
 
-  /**
-   * Task assigned event
-   */
-  socket.on('task:assigned', (data) => {
-    io.to(`user:${data.assignedToId}`).emit('task:assigned', data);
-    io.to(`project:${data.projectId}`).emit('task:assigned', data);
-  });
+      // Fetch task and check authorization
+      const task = await Task.findById(taskId);
+      if (!task) {
+        return ack({ success: false, error: 'Task not found' });
+      }
 
-  /**
-   * Comment added event
-   */
-  socket.on('comment:added', (data) => {
-    io.to(`task:${data.taskId}`).emit('comment:added', data);
+      const member = await ProjectMember.findOne({ projectId: task.projectId, userId: socket.user.id });
+      if (!member || member.role !== 'MANAGER') {
+        return ack({ success: false, error: 'Unauthorized' });
+      }
+
+      // Delete task in DB
+      await task.remove();
+
+      // Broadcast committed state
+      io.to(`project:${task.projectId}`).emit('task:deleted', { taskId });
+
+      // Acknowledge success
+      ack({ success: true });
+    } catch (error) {
+      console.error('Task deletion error:', error);
+      ack({ success: false, error: 'Failed to delete task' });
+    }
   });
 };

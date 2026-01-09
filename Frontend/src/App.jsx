@@ -19,6 +19,9 @@ import SignupPage from './pages/auth/SignupPage';
 // Main pages
 import { Dashboard } from './pages/Dashboard';
 import { Projects } from './pages/Projects';
+import { ProjectWorkspace } from './pages/ProjectWorkspace';
+import { Teams } from './pages/Teams';
+import { TeamDetail } from './pages/TeamDetail';
 
 // Protected Route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -88,9 +91,11 @@ function App() {
           <Route index element={<Navigate to="/app/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="projects" element={<Projects />} />
+          <Route path="projects/:projectId" element={<ProjectWorkspace />} />
+          <Route path="teams" element={<Teams />} />
+          <Route path="teams/:teamId" element={<TeamDetail />} />
           <Route path="tasks" element={<div className="glass rounded-2xl p-8"><h1 className="text-3xl font-bold gradient-text">Tasks (Coming Soon)</h1></div>} />
           <Route path="chat" element={<div className="glass rounded-2xl p-8"><h1 className="text-3xl font-bold gradient-text">Chat (Coming Soon)</h1></div>} />
-          <Route path="team" element={<div className="glass rounded-2xl p-8"><h1 className="text-3xl font-bold gradient-text">Team (Coming Soon)</h1></div>} />
         </Route>
 
         {/* Fallback: redirect /dashboard to /app/dashboard */}

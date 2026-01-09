@@ -1,5 +1,6 @@
 import { ApiError } from '../../utils/ApiError.js';
-import { Task, ProjectMember, Comment } from '../../models/index.js';
+import { Task, ProjectMember, Comment, Project } from '../../models/index.js';
+import activityService from '../activities/activity.service.js';
 
 class TaskService {
   async createTask(userId, taskData) {
@@ -19,20 +20,52 @@ class TaskService {
       throw new ApiError(403, 'Viewers cannot create tasks');
     }
 
-    const task = new Task({
-      ...rest,
-      projectId,
-      createdById: userId,
-    });
+    // Get project to extract teamId
+    const project = await Project.findById(projectId).select('teamId');
+    if (!project) {
+      throw new ApiError(404, 'Project not found');
+    }
 
-    await task.save();
-    await task.populate([
-      { path: 'project', select: 'id name color' },
-      { path: 'assignedTo', select: 'id firstName lastName avatar' },
-      { path: 'createdBy', select: 'id firstName lastName avatar' },
-    ]);
+    // Create task with transaction
+    const session = await Task.startSession();
+    session.startTransaction();
 
-    return task;
+    try {
+      const task = new Task({
+        ...rest,
+        projectId,
+        createdById: userId,
+      });
+
+      await task.save({ session });
+      await task.populate([
+        { path: 'project', select: 'id name color' },
+        { path: 'assignedTo', select: 'id firstName lastName avatar' },
+        { path: 'createdBy', select: 'id firstName lastName avatar' },
+      ]);
+
+      // Create activity entry
+      await activityService.createActivity(
+        'TASK_CREATED',
+        projectId,
+        project.teamId,
+        userId,
+        {
+          taskId: task._id,
+          taskTitle: task.title,
+        },
+        { targetId: task._id, targetType: 'Task', session }
+      );
+
+      await session.commitTransaction();
+      session.endSession();
+
+      return task;
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+      throw error;
+    }
   }
 
   async getTaskById(taskId, userId) {
@@ -193,6 +226,12 @@ class TaskService {
 
     if (filters.priority) {
       where.priority = filters.priority;
+    }
+
+    // Validate task status transitions
+    const validStatuses = ['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE'];
+    if (filters.status && !validStatuses.includes(filters.status)) {
+      throw new ApiError(400, 'Invalid task status');
     }
 
     const tasks = await Task.find(where)

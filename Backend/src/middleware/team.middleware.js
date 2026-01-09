@@ -192,3 +192,17 @@ export const validateRolePermissions = (role) => {
 
   return permissions[role] || permissions.VIEWER;
 };
+
+/**
+ * Validate if a role meets the required minimum role level
+ */
+export const validateRole = (currentRole, requiredRole) => {
+  const ROLE_HIERARCHY = {
+    OWNER: 4,
+    ADMIN: 3,
+    MEMBER: 2,
+    VIEWER: 1,
+  };
+
+  return (ROLE_HIERARCHY[currentRole] || 0) >= (ROLE_HIERARCHY[requiredRole] || 0);
+};

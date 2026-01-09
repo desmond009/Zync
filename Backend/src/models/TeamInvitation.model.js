@@ -78,6 +78,20 @@ teamInvitationSchema.methods.isExpired = function () {
   return this.expiresAt < new Date();
 };
 
+teamInvitationSchema.methods.accept = async function () {
+  if (this.status !== 'PENDING') {
+    throw new Error('This invitation has already been used or expired.');
+  }
+
+  this.status = 'ACCEPTED';
+  this.acceptedAt = new Date();
+  await this.save();
+};
+
+teamInvitationSchema.methods.isValid = function () {
+  return this.status === 'PENDING' && !this.isExpired();
+};
+
 const TeamInvitation = mongoose.model('TeamInvitation', teamInvitationSchema);
 
 export default TeamInvitation;

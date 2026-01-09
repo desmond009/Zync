@@ -9,3 +9,5 @@ export { default as Comment } from './Comment.model.js';
 export { default as Message } from './Message.model.js';
 export { default as MessageReadReceipt } from './MessageReadReceipt.model.js';
 export { default as Notification } from './Notification.model.js';
+export { default as FileMetadata } from './FileMetadata.model.js';
+export { default as Activity } from './Activity.model.js';

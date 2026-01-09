@@ -92,6 +92,10 @@ export const initializeSocketIO = (httpServer) => {
      */
     socket.on('error', (error) => {
       console.error('Socket error:', error);
+      socket.emit('error', {
+        success: false,
+        message: error.message || 'An unexpected error occurred.',
+      });
     });
   });
 

@@ -18,6 +18,11 @@ class ProjectService {
       throw new ApiError(403, 'You are not a member of this team');
     }
 
+    // Validate teamId
+    if (!teamId) {
+      throw new ApiError(400, 'Team ID is required');
+    }
+
     const project = new Project({
       name,
       description,
@@ -185,9 +190,19 @@ class ProjectService {
    * Get project messages
    */
   async getProjectMessages(projectId, userId, cursor = null, limit = 50) {
-    await this.checkProjectPermission(projectId, userId);
+    const member = await this.checkProjectPermission(projectId, userId);
 
-    const query = { projectId };
+    // Get project to validate teamId
+    const project = await Project.findById(projectId).select('teamId');
+    if (!project) {
+      throw new ApiError(404, 'Project not found');
+    }
+
+    const query = { 
+      projectId,
+      teamId: project.teamId, // Enforce team scoping
+    };
+    
     if (cursor) {
       query._id = { $lt: cursor };
     }
@@ -197,7 +212,7 @@ class ProjectService {
         path: 'sender',
         select: 'id firstName lastName avatar',
       })
-      .sort({ createdAt: -1 })
+      .sort({ sequenceNumber: -1 }) // Sort by sequence number for deterministic ordering
       .limit(limit + 1);
 
     const hasMore = messages.length > limit;
@@ -218,6 +233,11 @@ class ProjectService {
 
     if (!member) {
       throw new ApiError(403, 'You do not have access to this project');
+    }
+
+    // Ensure role-based access control
+    if (!allowedRoles) {
+      throw new ApiError(400, 'Allowed roles must be specified');
     }
 
     if (allowedRoles && !allowedRoles.includes(member.role)) {

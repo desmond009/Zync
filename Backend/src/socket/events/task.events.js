@@ -1,4 +1,5 @@
 import { Task, ProjectMember } from '../../models/index.js';
+import { validateRole } from '../middleware/team.middleware.js';
 
 export const setupTaskEvents = (io, socket) => {
   /**
@@ -44,22 +45,35 @@ export const setupTaskEvents = (io, socket) => {
     try {
       const { projectId, ...taskData } = data;
 
-      // Authorization check
+      // Validate team membership and role
       const member = await ProjectMember.findOne({ projectId, userId: socket.user.id });
-      if (!member || member.role === 'VIEWER') {
+      if (!member || !validateRole(member.role, 'MEMBER')) {
         return ack({ success: false, error: 'Unauthorized' });
       }
 
-      // Create task in DB
-      const task = new Task({ ...taskData, projectId, createdById: socket.user.id });
-      await task.save();
-      await task.populate(['project', 'assignedTo', 'createdBy']);
+      const session = await Task.startSession();
+      session.startTransaction();
+      try {
+        // Create task in DB
+        const task = new Task({ ...taskData, projectId, createdById: socket.user.id });
+        await task.save({ session });
+        await task.populate(['project', 'assignedTo', 'createdBy']);
 
-      // Broadcast committed state
-      io.to(`project:${projectId}`).emit('task:created', task);
+        // Commit transaction
+        await session.commitTransaction();
 
-      // Acknowledge success
-      ack({ success: true, task });
+        // Broadcast committed state
+        io.to(`project:${projectId}`).emit('task:created', task);
+
+        // Acknowledge success
+        ack({ success: true, task });
+      } catch (error) {
+        await session.abortTransaction();
+        console.error('Task creation error:', error);
+        ack({ success: false, error: 'Failed to create task' });
+      } finally {
+        session.endSession();
+      }
     } catch (error) {
       console.error('Task creation error:', error);
       ack({ success: false, error: 'Failed to create task' });
@@ -73,14 +87,14 @@ export const setupTaskEvents = (io, socket) => {
     try {
       const { taskId, ...updateData } = data;
 
-      // Fetch task and check authorization
+      // Fetch task and validate role
       const task = await Task.findById(taskId);
       if (!task) {
         return ack({ success: false, error: 'Task not found' });
       }
 
       const member = await ProjectMember.findOne({ projectId: task.projectId, userId: socket.user.id });
-      if (!member || member.role === 'VIEWER') {
+      if (!member || !validateRole(member.role, 'MEMBER')) {
         return ack({ success: false, error: 'Unauthorized' });
       }
 
@@ -107,14 +121,14 @@ export const setupTaskEvents = (io, socket) => {
     try {
       const { taskId } = data;
 
-      // Fetch task and check authorization
+      // Fetch task and validate role
       const task = await Task.findById(taskId);
       if (!task) {
         return ack({ success: false, error: 'Task not found' });
       }
 
       const member = await ProjectMember.findOne({ projectId: task.projectId, userId: socket.user.id });
-      if (!member || member.role !== 'MANAGER') {
+      if (!member || !validateRole(member.role, 'ADMIN')) {
         return ack({ success: false, error: 'Unauthorized' });
       }
 

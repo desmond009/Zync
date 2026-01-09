@@ -8,6 +8,16 @@ const notificationSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    projectId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Project',
+      index: true,
+    },
+    teamId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Team',
+      index: true,
+    },
     type: {
       type: String,
       enum: [
@@ -30,6 +40,11 @@ const notificationSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    deduplicationKey: {
+      type: String,
+      index: true,
+      sparse: true,
+    },
   },
   {
     timestamps: true,
@@ -41,6 +56,9 @@ const notificationSchema = new mongoose.Schema(
 // Compound index for efficient queries
 notificationSchema.index({ userId: 1, isRead: 1 });
 notificationSchema.index({ createdAt: -1 });
+notificationSchema.index({ userId: 1, projectId: 1 });
+notificationSchema.index({ userId: 1, teamId: 1 });
+notificationSchema.index({ userId: 1, deduplicationKey: 1 }, { unique: true, sparse: true });
 
 // Virtual for user
 notificationSchema.virtual('user', {

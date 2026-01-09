@@ -15,6 +15,7 @@ import teamRoutes from './modules/teams/team.routes.js';
 import projectRoutes from './modules/projects/project.routes.js';
 import taskRoutes from './modules/tasks/task.routes.js';
 import notificationRoutes from './modules/notifications/notification.routes.js';
+import activityRoutes from './modules/activities/activity.routes.js';
 
 /**
  * Create Express application
@@ -86,6 +87,7 @@ const createApp = () => {
   apiRouter.use('/projects', projectRoutes);
   apiRouter.use('/tasks', taskRoutes);
   apiRouter.use('/notifications', notificationRoutes);
+  apiRouter.use('/activities', activityRoutes);
 
   // Mount API router
   app.use(`/api/${config.apiVersion}`, apiRouter);

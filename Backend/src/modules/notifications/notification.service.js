@@ -1,38 +1,78 @@
 import { ApiError } from '../../utils/ApiError.js';
-import { getPaginationMeta, getSkip } from '../../utils/pagination.js';
-import { Notification } from '../../models/index.js';
+import { Notification, ProjectMember } from '../../models/index.js';
 
 class NotificationService {
-  async createNotification(userId, type, content) {
+  /**
+   * Create notification with deduplication and scoping
+   */
+  async createNotification(userId, type, content, options = {}) {
+    const { projectId = null, teamId = null, deduplicationKey = null } = options;
+
+    // If projectId is provided, validate user has access
+    if (projectId) {
+      const member = await ProjectMember.findOne({ projectId, userId });
+      if (!member) {
+        throw new ApiError(403, 'User does not have access to this project');
+      }
+    }
+
+    // Check for duplicate notification using deduplication key
+    if (deduplicationKey) {
+      const existing = await Notification.findOne({
+        userId,
+        deduplicationKey,
+      });
+
+      if (existing) {
+        // Update existing notification instead of creating duplicate
+        existing.content = content;
+        existing.isRead = false;
+        existing.createdAt = new Date();
+        await existing.save();
+        return existing;
+      }
+    }
+
     const notification = new Notification({
       userId,
       type,
       content,
+      projectId,
+      teamId,
+      deduplicationKey,
     });
 
     await notification.save();
     return notification;
   }
 
-  async getUserNotifications(userId, page = 1, limit = 20, unreadOnly = false) {
-    const skip = getSkip(page, limit);
+  async getUserNotifications(userId, cursor = null, limit = 20, filters = {}) {
+    const { unreadOnly = false, projectId = null, teamId = null } = filters;
+    
     const where = { userId };
 
     if (unreadOnly) {
       where.isRead = false;
     }
 
-    const [notifications, total] = await Promise.all([
-      Notification.find(where)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit),
-      Notification.countDocuments(where),
-    ]);
+    if (projectId) {
+      where.projectId = projectId;
+    }
 
-    const pagination = getPaginationMeta(total, page, limit);
+    if (teamId) {
+      where.teamId = teamId;
+    }
 
-    return { notifications, pagination };
+    // Optimize pagination with cursor-based strategy
+    const query = cursor ? { _id: { $gt: cursor }, ...where } : where;
+    
+    const notifications = await Notification.find(query)
+      .sort({ createdAt: -1 })
+      .limit(limit);
+
+    const nextCursor = notifications.length > 0 ? notifications[notifications.length - 1]._id : null;
+
+    return { notifications, nextCursor };
   }
 
   async markAsRead(notificationId, userId) {

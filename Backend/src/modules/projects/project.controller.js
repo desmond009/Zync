@@ -57,6 +57,27 @@ class ProjectController {
     const result = await projectService.getProjectMessages(projectId, req.user.id, cursor, limit);
     sendSuccess(res, 200, result, 'Messages retrieved successfully');
   });
+
+  /**
+   * GET /api/v1/projects/:projectId/members
+   * Get all project members
+   */
+  getProjectMembers = asyncHandler(async (req, res) => {
+    const { projectId } = req.params;
+    const members = await projectService.getProjectMembers(projectId, req.user.id);
+    sendSuccess(res, 200, { members }, 'Members retrieved successfully');
+  });
+
+  /**
+   * POST /api/v1/projects/:projectId/messages
+   * Send a message to project chat
+   */
+  sendMessage = asyncHandler(async (req, res) => {
+    const { projectId } = req.params;
+    const { content } = req.body;
+    const message = await projectService.sendMessage(projectId, req.user.id, content, req.io);
+    sendSuccess(res, 201, { message }, 'Message sent successfully');
+  });
 }
 
 export default new ProjectController();

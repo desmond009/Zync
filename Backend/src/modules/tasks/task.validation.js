@@ -60,3 +60,34 @@ export const deleteCommentSchema = {
     commentId: commonSchemas.uuid.required(),
   }),
 };
+
+export const getTasksSchema = {
+  query: Joi.object({
+    projectId: commonSchemas.uuid.required(),
+    status: Joi.string().valid('TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE'),
+    assignedToId: commonSchemas.uuid,
+    page: Joi.number().integer().min(1).default(1),
+    limit: Joi.number().integer().min(1).max(100).default(50),
+  }),
+};
+
+export const moveTaskSchema = {
+  params: Joi.object({
+    taskId: commonSchemas.uuid.required(),
+  }),
+  body: Joi.object({
+    status: Joi.string().valid('TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE').required(),
+    position: Joi.number().integer().min(0).required(),
+    projectId: commonSchemas.uuid.required(),
+  }),
+};
+
+export const assignTaskSchema = {
+  params: Joi.object({
+    taskId: commonSchemas.uuid.required(),
+  }),
+  body: Joi.object({
+    assignedToId: commonSchemas.uuid.allow(null).required(),
+    projectId: commonSchemas.uuid.required(),
+  }),
+};

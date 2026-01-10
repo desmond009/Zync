@@ -56,8 +56,8 @@ export const validate = (schema) => {
  * Common validation schemas
  */
 export const commonSchemas = {
-  uuid: Joi.string().uuid(),
-  objectId: Joi.string().regex(/^[0-9a-f]{24}$/i).required(),
+  uuid: Joi.string().regex(/^[0-9a-f]{24}$/i),
+  objectId: Joi.string().regex(/^[0-9a-f]{24}$/i),
   email: Joi.string().email().lowercase().trim(),
   password: Joi.string().min(8).max(128),
   date: Joi.date().iso(),

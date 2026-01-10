@@ -1,5 +1,7 @@
 import { ApiError } from '../../utils/ApiError.js';
-import { Project, ProjectMember, TeamMember, Task } from '../../models/index.js';
+import { Project, ProjectMember, TeamMember, Task, Message, User } from '../../models/index.js';
+import mongoose from 'mongoose';
+import activityService from '../activities/activity.service.js';
 
 class ProjectService {
   /**
@@ -241,6 +243,94 @@ class ProjectService {
     const nextCursor = hasMore ? data[data.length - 1]._id : null;
 
     return { messages: data, nextCursor, hasMore };
+  }
+
+  /**
+   * Get project members
+   */
+  async getProjectMembers(projectId, userId) {
+    // Check access
+    await this.checkProjectPermission(projectId, userId, ['MANAGER', 'CONTRIBUTOR', 'VIEWER']);
+
+    const members = await ProjectMember.find({ projectId })
+      .populate('userId', 'id email firstName lastName avatar')
+      .lean();
+
+    return members;
+  }
+
+  /**
+   * Send message to project
+   */
+  async sendMessage(projectId, userId, content, io) {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      // Verify access
+      await this.checkProjectPermission(projectId, userId, ['MANAGER', 'CONTRIBUTOR', 'VIEWER']);
+
+      // Get project for teamId
+      const project = await Project.findById(projectId).select('teamId').session(session);
+      if (!project) {
+        throw new ApiError(404, 'Project not found');
+      }
+
+      // Get next sequence number atomically
+      const lastMessage = await Message.findOne({ projectId })
+        .sort({ sequenceNumber: -1 })
+        .select('sequenceNumber')
+        .session(session);
+
+      const sequenceNumber = lastMessage ? lastMessage.sequenceNumber + 1 : 1;
+
+      // Create message
+      const [message] = await Message.create(
+        [
+          {
+            content,
+            projectId,
+            teamId: project.teamId,
+            senderId: userId,
+            type: 'TEXT',
+            sequenceNumber,
+          },
+        ],
+        { session }
+      );
+
+      // Populate sender
+      await message.populate('sender', 'id firstName lastName avatar email');
+
+      // Create activity
+      await activityService.createActivity(
+        'MESSAGE_SENT',
+        projectId,
+        project.teamId,
+        userId,
+        {
+          messageId: message._id,
+          preview: content.substring(0, 100),
+        },
+        { session }
+      );
+
+      await session.commitTransaction();
+
+      // Emit socket event AFTER DB commit
+      if (io) {
+        io.to(`project:${projectId}`).emit('message:created', {
+          message: message.toObject(),
+        });
+      }
+
+      return message.toObject();
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
   }
 
   /**

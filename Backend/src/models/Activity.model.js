@@ -16,6 +16,7 @@ const activitySchema = new mongoose.Schema(
         'MEMBER_LEFT',
         'FILE_UPLOADED',
         'FILE_DELETED',
+        'MESSAGE_SENT',
         'PROJECT_CREATED',
         'PROJECT_UPDATED',
         'PROJECT_ARCHIVED',

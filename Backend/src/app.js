@@ -16,6 +16,7 @@ import projectRoutes from './modules/projects/project.routes.js';
 import taskRoutes from './modules/tasks/task.routes.js';
 import notificationRoutes from './modules/notifications/notification.routes.js';
 import activityRoutes from './modules/activities/activity.routes.js';
+import fileRoutes from './modules/files/file.routes.js';
 
 /**
  * Create Express application
@@ -56,6 +57,14 @@ const createApp = () => {
   // Rate limiting
   app.use(generalLimiter);
 
+  // ==================== ATTACH SOCKET.IO ====================
+  
+  // Middleware to attach io instance to requests
+  app.use((req, res, next) => {
+    req.io = req.app.get('io');
+    next();
+  });
+
   // ==================== HEALTH CHECK ====================
   
   app.get('/health', (req, res) => {
@@ -86,6 +95,7 @@ const createApp = () => {
   apiRouter.use('/teams', teamRoutes);
   apiRouter.use('/projects', projectRoutes);
   apiRouter.use('/tasks', taskRoutes);
+  apiRouter.use('/files', fileRoutes);
   apiRouter.use('/notifications', notificationRoutes);
   apiRouter.use('/activities', activityRoutes);
 

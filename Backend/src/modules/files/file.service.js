@@ -74,28 +74,16 @@ class FileService {
   /**
    * Get project files
    */
-  async getProjectFiles(projectId, userId, cursor = null, limit = 50) {
-    // Validate user has access to project
-    const member = await ProjectMember.findOne({ projectId, userId });
-    if (!member) {
-      throw new ApiError(403, 'You do not have access to this project');
-    }
-
+  async getProjectFiles(projectId) {
+    // Authorization already handled by middleware
     const query = { projectId, deletedAt: null };
-    if (cursor) {
-      query._id = { $lt: cursor };
-    }
 
     const files = await FileMetadata.find(query)
       .populate({ path: 'uploader', select: 'id firstName lastName avatar' })
       .sort({ createdAt: -1 })
-      .limit(limit + 1);
+      .lean();
 
-    const hasMore = files.length > limit;
-    const data = hasMore ? files.slice(0, -1) : files;
-    const nextCursor = hasMore ? data[data.length - 1]._id : null;
-
-    return { files: data, nextCursor, hasMore };
+    return files;
   }
 
   /**

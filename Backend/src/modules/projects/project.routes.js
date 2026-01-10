@@ -25,5 +25,7 @@ router.patch('/:projectId/members/:memberId', validate(updateProjectMemberSchema
 router.delete('/:projectId/members/:memberId', validate(getProjectSchema), projectController.removeProjectMember);
 
 router.get('/:projectId/messages', validate(getProjectSchema), projectController.getProjectMessages);
+router.post('/:projectId/messages', validate(getProjectSchema), projectController.sendMessage);
+router.get('/:projectId/members', validate(getProjectSchema), projectController.getProjectMembers);
 
 export default router;

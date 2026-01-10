@@ -76,6 +76,12 @@
     animation: shimmer 2s infinite;
     background-size: 200% 100%;
   }
+
+  /* Dot pattern background */
+  .bg-dot-pattern {
+    background-image: radial-gradient(circle, currentColor 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
 }
 
 /* Animation for typing indicator */

@@ -284,3 +284,53 @@ export const Skeleton = ({ className, ...props }) => {
     />
   );
 };
+
+/**
+ * Sheet Component for Mobile Drawer/Sidebar
+ */
+export const Sheet = ({ isOpen, onClose, children, side = 'left', className }) => {
+  const sides = {
+    left: {
+      container: 'left-0 top-0 h-full',
+      initial: { x: -320 },
+      animate: { x: 0 },
+      exit: { x: -320 },
+    },
+    right: {
+      container: 'right-0 top-0 h-full',
+      initial: { x: 320 },
+      animate: { x: 0 },
+      exit: { x: 320 },
+    },
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* Backdrop */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      
+      {/* Sheet */}
+      <motion.div
+        initial={sides[side].initial}
+        animate={sides[side].animate}
+        exit={sides[side].exit}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        className={cn(
+          'fixed z-50 w-80 glass shadow-2xl',
+          sides[side].container,
+          className
+        )}
+      >
+        {children}
+      </motion.div>
+    </>
+  );
+};

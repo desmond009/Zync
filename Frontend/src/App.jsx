@@ -9,6 +9,7 @@ import { LandingPage } from './components/landing';
 
 // Layouts
 import { DashboardLayout } from './layouts/DashboardLayout';
+import { EnhancedDashboardLayout } from './layouts/EnhancedDashboardLayout';
 import { ProjectWorkspaceLayout } from './layouts/ProjectWorkspaceLayout';
 
 // Auth pages
@@ -23,6 +24,7 @@ import { Projects } from './pages/Projects';
 import { ProjectWorkspace } from './pages/ProjectWorkspace';
 import { Teams } from './pages/Teams';
 import { TeamDetail } from './pages/TeamDetail';
+import { LayoutDemo } from './pages/LayoutDemo';
 
 // Project views
 import { TasksView } from './components/projects/TasksView';
@@ -73,16 +75,33 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
 
-        {/* Protected routes */}
+        {/* Protected routes - Enhanced Layout */}
         <Route
           path="/app"
+          element={
+            <ProtectedRoute>
+              <EnhancedDashboardLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/app/dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="projects" element={<Projects />} />
+          <Route path="teams" element={<Teams />} />
+          <Route path="teams/:teamId" element={<TeamDetail />} />
+          <Route path="demo" element={<LayoutDemo />} />
+        </Route>
+
+        {/* Protected routes - Old Layout (for comparison) */}
+        <Route
+          path="/app-old"
           element={
             <ProtectedRoute>
               <DashboardLayout />
             </ProtectedRoute>
           }
         >
-          <Route index element={<Navigate to="/app/dashboard" replace />} />
+          <Route index element={<Navigate to="/app-old/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="projects" element={<Projects />} />
           <Route path="teams" element={<Teams />} />

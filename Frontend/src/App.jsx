@@ -9,6 +9,7 @@ import { LandingPage } from './components/landing';
 
 // Layouts
 import { DashboardLayout } from './layouts/DashboardLayout';
+import { ProjectWorkspaceLayout } from './layouts/ProjectWorkspaceLayout';
 
 // Auth pages
 import { Login } from './pages/auth/Login';
@@ -22,6 +23,12 @@ import { Projects } from './pages/Projects';
 import { ProjectWorkspace } from './pages/ProjectWorkspace';
 import { Teams } from './pages/Teams';
 import { TeamDetail } from './pages/TeamDetail';
+
+// Project views
+import { TasksView } from './components/projects/TasksView';
+import { ChatView } from './components/projects/ChatView';
+import { FilesView } from './components/projects/FilesView';
+import { ActivityView } from './components/projects/ActivityView';
 
 // Protected Route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -78,11 +85,24 @@ function App() {
           <Route index element={<Navigate to="/app/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="projects" element={<Projects />} />
-          <Route path="projects/:projectId" element={<ProjectWorkspace />} />
           <Route path="teams" element={<Teams />} />
           <Route path="teams/:teamId" element={<TeamDetail />} />
-          <Route path="tasks" element={<div className="glass rounded-2xl p-8"><h1 className="text-3xl font-bold gradient-text">Tasks (Coming Soon)</h1></div>} />
-          <Route path="chat" element={<div className="glass rounded-2xl p-8"><h1 className="text-3xl font-bold gradient-text">Chat (Coming Soon)</h1></div>} />
+        </Route>
+
+        {/* Project Workspace - Separate layout for project views */}
+        <Route
+          path="/app/projects/:projectId"
+          element={
+            <ProtectedRoute>
+              <ProjectWorkspaceLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="tasks" replace />} />
+          <Route path="tasks" element={<TasksView />} />
+          <Route path="chat" element={<ChatView />} />
+          <Route path="files" element={<FilesView />} />
+          <Route path="activity" element={<ActivityView />} />
         </Route>
 
         {/* Fallback: redirect /dashboard to /app/dashboard */}

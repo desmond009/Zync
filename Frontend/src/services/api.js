@@ -130,6 +130,12 @@ export const projectsAPI = {
   
   removeMember: (projectId, memberId) =>
     api.delete(`/projects/${projectId}/members/${memberId}`),
+  
+  getMessages: (projectId, page = 1, limit = 50) =>
+    api.get(`/projects/${projectId}/messages`, { params: { page, limit } }),
+  
+  sendMessage: (projectId, data) =>
+    api.post(`/projects/${projectId}/messages`, data),
 };
 
 // Tasks API
@@ -243,6 +249,33 @@ export const teamsAPI = {
   
   cancelInvitation: (teamId, invitationId) =>
     api.delete(`/teams/${teamId}/invitations/${invitationId}`),
+};
+
+// Files API
+export const filesAPI = {
+  getByProject: (projectId) =>
+    api.get('/files', { params: { projectId } }),
+  
+  upload: (formData, onProgress) =>
+    api.post('/files', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: onProgress,
+    }),
+  
+  delete: (fileId) =>
+    api.delete(`/files/${fileId}`),
+  
+  download: (fileId) =>
+    api.get(`/files/${fileId}/download`, { responseType: 'blob' }),
+};
+
+// Activities API
+export const activitiesAPI = {
+  getByProject: (projectId, page = 1, limit = 50) =>
+    api.get('/activities', { params: { projectId, page, limit } }),
+  
+  getByTask: (taskId) =>
+    api.get('/activities', { params: { taskId } }),
 };
 
 export default api;

@@ -13,10 +13,7 @@ import { EnhancedDashboardLayout } from './layouts/EnhancedDashboardLayout';
 import { ProjectWorkspaceLayout } from './layouts/ProjectWorkspaceLayout';
 
 // Auth pages
-import { Login } from './pages/auth/Login';
-import { Register } from './pages/auth/Register';
-import LoginPage from './pages/auth/LoginPage';
-import SignupPage from './pages/auth/SignupPage';
+import AuthPage from './pages/AuthPage';
 
 // Main pages
 import { Dashboard } from './pages/Dashboard';
@@ -67,13 +64,10 @@ function App() {
         {/* Landing Page */}
         <Route path="/" element={<LandingPage />} />
         
-        {/* Auth routes - Old versions */}
-        <Route path="/login-old" element={<Login />} />
-        <Route path="/register-old" element={<Register />} />
-
-        {/* Auth routes - New modern versions */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
+        {/* Auth routes - Modern authentication screens */}
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/login" element={<Navigate to="/auth" replace />} />
+        <Route path="/signup" element={<Navigate to="/auth" replace />} />
 
         {/* Protected routes - Enhanced Layout */}
         <Route

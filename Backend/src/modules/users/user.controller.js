@@ -17,6 +17,17 @@ class UserController {
   });
 
   /**
+   * @route   GET /api/v1/users/profile
+   * @desc    Get current user's profile
+   * @access  Private
+   */
+  getProfile = asyncHandler(async (req, res) => {
+    const user = await userService.getUserById(req.user.id);
+
+    sendSuccess(res, 200, { user }, 'Profile retrieved successfully');
+  });
+
+  /**
    * @route   PATCH /api/v1/users/profile
    * @desc    Update user profile
    * @access  Private

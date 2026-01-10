@@ -11,7 +11,7 @@ export const useProjectStore = create((set, get) => ({
     set({ isLoading: true });
     try {
       const { data } = await projectsAPI.getAll(teamId);
-      set({ projects: data.projects || data.data || [], isLoading: false });
+      set({ projects: data.data?.projects || data.projects || data.data || [], isLoading: false });
     } catch (error) {
       set({ isLoading: false });
       throw error;

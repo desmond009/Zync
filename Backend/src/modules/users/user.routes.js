@@ -10,6 +10,8 @@ const router = express.Router();
 router.use(authenticate);
 
 // Profile routes
+router.get('/profile', userController.getProfile);
+
 router.get('/search', validate(searchUsersSchema), userController.searchUsers);
 
 router.get('/teams', userController.getUserTeams);

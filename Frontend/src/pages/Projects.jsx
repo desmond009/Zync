@@ -32,7 +32,7 @@ export const Projects = () => {
           return true;
         })
         .filter((p) =>
-          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           p.description?.toLowerCase().includes(searchQuery.toLowerCase())
         )
     : [];
@@ -151,13 +151,13 @@ export const Projects = () => {
           >
             {filteredProjects.map((project, idx) => (
               <motion.div
-                key={project.id}
+                key={project._id || project.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.05 }}
                 whileHover={{ y: -8 }}
               >
-                <Link to={`/app/projects/${project.id}`}>
+                <Link to={`/app/projects/${project._id || project.id}`}>
                   <Card gradient hoverable className="h-full">
                     {/* Header */}
                     <div className="flex items-start justify-between mb-4">

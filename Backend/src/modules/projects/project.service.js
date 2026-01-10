@@ -57,6 +57,27 @@ class ProjectService {
   }
 
   /**
+   * Get all projects for a user
+   */
+  async getUserProjects(userId) {
+    const projects = await Project.find()
+      .populate({ path: 'team', select: 'id name' })
+      .populate({
+        path: 'members',
+        populate: {
+          path: 'userId',
+          select: 'id email firstName lastName avatar',
+        },
+      })
+      .lean();
+
+    // Filter projects where user is a member
+    return projects.filter((project) =>
+      project.members.some((member) => member.userId._id.toString() === userId)
+    );
+  }
+
+  /**
    * Get project by ID
    */
   async getProjectById(projectId, userId) {

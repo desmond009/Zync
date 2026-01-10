@@ -8,6 +8,11 @@ class ProjectController {
     sendSuccess(res, 201, { project }, 'Project created successfully');
   });
 
+  getUserProjects = asyncHandler(async (req, res) => {
+    const projects = await projectService.getUserProjects(req.user.id);
+    sendSuccess(res, 200, { projects }, 'Projects retrieved successfully');
+  });
+
   getProjectById = asyncHandler(async (req, res) => {
     const { projectId } = req.params;
     const project = await projectService.getProjectById(projectId, req.user.id);

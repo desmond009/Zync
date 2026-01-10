@@ -188,7 +188,7 @@ export const KanbanBoard = ({ projectId }) => {
   }, [projectId]);
 
   const getTasksByStatus = (status) => {
-    return tasks.filter((task) => task.status === status);
+    return Array.isArray(tasks) ? tasks.filter((task) => task.status === status) : [];
   };
 
   const handleAddTask = (status) => {

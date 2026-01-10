@@ -15,6 +15,7 @@ const router = express.Router();
 router.use(authenticate);
 
 router.post('/', validate(createProjectSchema), projectController.createProject);
+router.get('/', projectController.getUserProjects);
 router.get('/:projectId', validate(getProjectSchema), projectController.getProjectById);
 router.patch('/:projectId', validate(updateProjectSchema), projectController.updateProject);
 router.delete('/:projectId', validate(getProjectSchema), projectController.deleteProject);

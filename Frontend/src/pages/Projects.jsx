@@ -3,10 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Card, Badge, Avatar, Button, Input, Modal } from '@/components/ui';
 import { useProjectStore } from '@/store/projectStore';
+import { useTeamStore } from '@/store/teamStore';
 import { formatDate, getInitials } from '@/lib/utils';
 
 export const Projects = () => {
   const { projects, fetchProjects, createProject, isLoading } = useProjectStore();
+  const { teams, fetchTeams } = useTeamStore();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('all');
@@ -18,19 +20,22 @@ export const Projects = () => {
 
   useEffect(() => {
     fetchProjects();
+    fetchTeams();
   }, []);
 
-  const filteredProjects = projects
-    .filter((p) => {
-      if (filter === 'active') return p.status === 'ACTIVE';
-      if (filter === 'completed') return p.status === 'COMPLETED';
-      if (filter === 'archived') return p.status === 'ARCHIVED';
-      return true;
-    })
-    .filter((p) =>
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.description?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+  const filteredProjects = Array.isArray(projects)
+    ? projects
+        .filter((p) => {
+          if (filter === 'active') return p.status === 'ACTIVE';
+          if (filter === 'completed') return p.status === 'COMPLETED';
+          if (filter === 'archived') return p.status === 'ARCHIVED';
+          return true;
+        })
+        .filter((p) =>
+          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.description?.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+    : [];
 
   const handleCreateProject = async () => {
     try {
@@ -248,6 +253,23 @@ export const Projects = () => {
           />
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+              Team
+            </label>
+            <select
+              className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+              value={newProject.teamId}
+              onChange={(e) => setNewProject({ ...newProject, teamId: e.target.value })}
+            >
+              <option value="">Select a team</option>
+              {Array.isArray(teams) && teams.map((team) => (
+                <option key={team._id} value={team._id}>
+                  {team.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               Description
             </label>
             <textarea
@@ -269,7 +291,7 @@ export const Projects = () => {
             <Button
               className="flex-1"
               onClick={handleCreateProject}
-              disabled={!newProject.name}
+              disabled={!newProject.name || !newProject.teamId}
             >
               Create Project
             </Button>

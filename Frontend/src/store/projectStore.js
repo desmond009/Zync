@@ -11,7 +11,7 @@ export const useProjectStore = create((set, get) => ({
     set({ isLoading: true });
     try {
       const { data } = await projectsAPI.getAll(teamId);
-      set({ projects: data.data, isLoading: false });
+      set({ projects: data.projects || data.data || [], isLoading: false });
     } catch (error) {
       set({ isLoading: false });
       throw error;
@@ -23,7 +23,7 @@ export const useProjectStore = create((set, get) => ({
     set({ isLoading: true });
     try {
       const { data } = await projectsAPI.getById(id);
-      set({ currentProject: data.data, isLoading: false });
+      set({ currentProject: data.project || data.data, isLoading: false });
     } catch (error) {
       set({ isLoading: false });
       throw error;
@@ -33,16 +33,22 @@ export const useProjectStore = create((set, get) => ({
   // Create project
   createProject: async (projectData) => {
     const { data } = await projectsAPI.create(projectData);
-    set((state) => ({ projects: [...state.projects, data.data] }));
-    return data.data;
+    const newProject = data.project || data.data;
+    set((state) => ({ 
+      projects: Array.isArray(state.projects) ? [...state.projects, newProject] : [newProject] 
+    }));
+    return newProject;
   },
 
   // Update project
   updateProject: async (id, updates) => {
     const { data } = await projectsAPI.update(id, updates);
+    const updatedProject = data.project || data.data;
     set((state) => ({
-      projects: state.projects.map((p) => (p.id === id ? data.data : p)),
-      currentProject: state.currentProject?.id === id ? data.data : state.currentProject,
+      projects: Array.isArray(state.projects) 
+        ? state.projects.map((p) => (p._id === id || p.id === id ? updatedProject : p))
+        : [updatedProject],
+      currentProject: state.currentProject?._id === id || state.currentProject?.id === id ? updatedProject : state.currentProject,
     }));
     return data.data;
   },
@@ -51,7 +57,9 @@ export const useProjectStore = create((set, get) => ({
   deleteProject: async (id) => {
     await projectsAPI.delete(id);
     set((state) => ({
-      projects: state.projects.filter((p) => p.id !== id),
+      projects: Array.isArray(state.projects) 
+        ? state.projects.filter((p) => p._id !== id && p.id !== id)
+        : [],
       currentProject: state.currentProject?.id === id ? null : state.currentProject,
     }));
   },

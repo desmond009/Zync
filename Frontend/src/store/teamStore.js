@@ -17,8 +17,9 @@ export const useTeamStore = create((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const { data } = await teamsAPI.getUserTeams();
-      set({ teams: data.data.teams, isLoading: false });
-      return data.data.teams;
+      const teams = data.teams || data.data?.teams || data.data || [];
+      set({ teams, isLoading: false });
+      return teams;
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Failed to fetch teams';
       set({ error: errorMsg, isLoading: false });

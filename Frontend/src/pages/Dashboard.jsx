@@ -22,7 +22,7 @@ export const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    if (projects.length > 0) {
+    if (Array.isArray(projects) && projects.length > 0) {
       // Calculate stats from projects
       const activeTasks = projects.reduce((sum, p) => sum + (p.tasks?.filter(t => t.status !== 'DONE').length || 0), 0);
       const completedToday = projects.reduce((sum, p) => {
@@ -50,7 +50,7 @@ export const Dashboard = () => {
     }
   }, [projects]);
 
-  const recentProjects = projects.slice(0, 4);
+  const recentProjects = Array.isArray(projects) ? projects.slice(0, 4) : [];
 
   const containerVariants = {
     hidden: { opacity: 0 },

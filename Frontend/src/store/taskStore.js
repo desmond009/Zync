@@ -28,7 +28,7 @@ export const useTaskStore = create((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       const response = await tasksAPI.getTasks(filters);
-      set({ tasks: response.data.tasks, isLoading: false });
+      set({ tasks: response.data.tasks || response.data.data || [], isLoading: false });
     } catch (error) {
       console.error('Error fetching tasks:', error);
       set({ error: error.response?.data?.message || 'Failed to fetch tasks', isLoading: false });
@@ -41,8 +41,8 @@ export const useTaskStore = create((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       const response = await tasksAPI.getTask(taskId);
-      set({ currentTask: response.data.task, isLoading: false });
-      return response.data.task;
+      set({ currentTask: response.data.task || response.data.data, isLoading: false });
+      return response.data.task || response.data.data;
     } catch (error) {
       console.error('Error fetching task:', error);
       set({ error: error.response?.data?.message || 'Failed to fetch task', isLoading: false });

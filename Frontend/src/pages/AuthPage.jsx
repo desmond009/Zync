@@ -55,50 +55,6 @@ const AuthPage = () => {
     </div>
   );
 
-  // Task completion notification card
-  const NotificationCard = () => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.5, duration: 0.6 }}
-      className="absolute top-1/3 right-8 w-80"
-    >
-      <motion.div
-        className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 shadow-2xl"
-        whileHover={{ scale: 1.05, y: -5 }}
-      >
-        <div className="flex items-center gap-3 mb-4">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center"
-          >
-            <svg
-              className="w-6 h-6 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-          </motion.div>
-          <div>
-            <p className="text-white font-semibold">Project Complete</p>
-            <p className="text-white/70 text-sm">Design System v2.0</p>
-          </div>
-        </div>
-        <p className="text-white/80 text-sm">
-          Just published the new authentication flows to production! 🚀
-        </p>
-      </motion.div>
-    </motion.div>
-  );
-
   return (
     <div className="flex h-screen bg-white dark:bg-zinc-950">
       {/* Left Panel - Brand Experience (Desktop only) */}
@@ -157,21 +113,18 @@ const AuthPage = () => {
               </div>
             </div>
           </motion.div>
-
-          {/* Notification Card */}
-          <NotificationCard />
         </div>
       </div>
 
       {/* Right Panel - Form */}
-      <div className="flex w-full lg:w-1/2 flex-col items-center justify-center px-4 sm:px-6 py-8">
+      <div className="flex w-full lg:w-1/2 flex-col items-center justify-center px-4 sm:px-6 py-6">
         <div className="w-full max-w-md">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="mb-8 lg:mb-10"
+            className="mb-6"
           >
             {/* Logo for mobile/tablet */}
             <div className="lg:hidden flex items-center gap-2 mb-8">
@@ -185,7 +138,7 @@ const AuthPage = () => {
               <span className="text-xl font-bold text-zinc-900 dark:text-white">Zync</span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl font-bold text-zinc-900 dark:text-white mb-2">
+            <h1 className="text-4xl sm:text-5xl font-bold text-zinc-900 dark:text-white mb-2">
               {isLogin ? 'Welcome back' : 'Create an account'}
             </h1>
             <p className="text-zinc-500 dark:text-zinc-400 text-sm sm:text-base">

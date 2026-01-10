@@ -141,9 +141,9 @@ const SignupForm = () => {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="mb-5"
+        className="mb-4"
       >
-        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200 mb-2">
+        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200 mb-2.5">
           {label}
         </label>
 
@@ -250,7 +250,7 @@ const SignupForm = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {/* Social Auth Buttons */}
       <div className="space-y-3">
         <AuthSocialButton provider="Google" disabled={isLoading} />
@@ -258,7 +258,7 @@ const SignupForm = () => {
       </div>
 
       {/* Divider */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 py-1">
         <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-700"></div>
         <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
           Or continue with email

@@ -9,14 +9,16 @@ import { LandingPage } from './components/landing';
 
 // Layouts
 import { DashboardLayout } from './layouts/DashboardLayout';
-import { EnhancedDashboardLayout } from './layouts/EnhancedDashboardLayout';
-import { ProjectWorkspaceLayout } from './layouts/ProjectWorkspaceLayout';
 
 // Auth pages
-import AuthPage from './pages/AuthPage';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
 
 // Main pages
 import { Dashboard } from './pages/Dashboard';
+import DashboardHome from './pages/DashboardHome';
+import ProjectsPage from './pages/ProjectsPage';
+import TeamsPage from './pages/TeamsPage';
 import { Projects } from './pages/Projects';
 import { ProjectWorkspace } from './pages/ProjectWorkspace';
 import { Teams } from './pages/Teams';
@@ -65,28 +67,39 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         
         {/* Auth routes - Modern authentication screens */}
-        <Route path="/auth" element={<AuthPage />} />
-        <Route path="/login" element={<Navigate to="/auth" replace />} />
-        <Route path="/signup" element={<Navigate to="/auth" replace />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/auth" element={<Navigate to="/login" replace />} />
 
-        {/* Protected routes - Enhanced Layout */}
+        {/* Protected routes - Main App with New Sidebar */}
         <Route
-          path="/app"
+          path="/dashboard"
           element={
             <ProtectedRoute>
-              <EnhancedDashboardLayout />
+              <DashboardHome />
             </ProtectedRoute>
           }
-        >
-          <Route index element={<Navigate to="/app/dashboard" replace />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="projects" element={<Projects />} />
-          <Route path="teams" element={<Teams />} />
-          <Route path="teams/:teamId" element={<TeamDetail />} />
-          <Route path="demo" element={<LayoutDemo />} />
-        </Route>
+        />
 
-        {/* Protected routes - Old Layout (for comparison) */}
+        <Route
+          path="/projects"
+          element={
+            <ProtectedRoute>
+              <ProjectsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/teams"
+          element={
+            <ProtectedRoute>
+              <TeamsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Protected routes - Legacy routes (old layout for backward compatibility) */}
         <Route
           path="/app-old"
           element={
@@ -103,25 +116,6 @@ function App() {
         </Route>
 
         {/* Project Workspace - Separate layout for project views */}
-        <Route
-          path="/app/projects/:projectId"
-          element={
-            <ProtectedRoute>
-              <ProjectWorkspaceLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Navigate to="tasks" replace />} />
-          <Route path="tasks" element={<TasksView />} />
-          <Route path="chat" element={<ChatView />} />
-          <Route path="files" element={<FilesView />} />
-          <Route path="activity" element={<ActivityView />} />
-        </Route>
-
-        {/* Fallback: redirect /dashboard to /app/dashboard */}
-        <Route path="/dashboard" element={<Navigate to="/app/dashboard" replace />} />
-
-        {/* Catch all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
@@ -135,8 +129,7 @@ function App() {
             backdropFilter: 'blur(12px)',
             border: '1px solid rgba(226, 232, 240, 0.8)',
             borderRadius: '12px',
-            padding: '16px',
-            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
+
           },
           success: {
             iconTheme: {

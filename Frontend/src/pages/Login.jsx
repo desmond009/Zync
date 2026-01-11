@@ -169,7 +169,6 @@ const Login = () => {
                       className={`w-full pl-11 pr-4 py-3 bg-zinc-900 border ${
                         errors.email ? 'border-red-400' : 'border-zinc-700'
                       } rounded-lg text-white placeholder-gray-500 
-                      focus:outline-none focus:ring-2 focus:ring-indigo-5
                       focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent
                       transition-all duration-200`}
                       placeholder="you@example.com"

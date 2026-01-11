@@ -65,11 +65,11 @@ export const LandingNavbar = () => {
           <Link to="/" className="flex items-center gap-2">
             <motion.div
               whileHover={{ rotate: 5, scale: 1.1 }}
-              className="w-8 h-8 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center"
+              className="w-8 h-8 bg-gradient-to-r from-blue-600 to-teal-600 rounded-lg flex items-center justify-center"
             >
               <span className="text-white font-bold text-xl">Z</span>
             </motion.div>
-            <span className="text-2xl font-bold gradient-text">Zync</span>
+            <span className="text-2xl font-bold text-blue-600">Zync</span>
           </Link>
 
           {/* Desktop Navigation */}

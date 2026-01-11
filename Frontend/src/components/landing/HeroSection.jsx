@@ -35,7 +35,7 @@ export const HeroSection = () => {
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
       {/* Animated Background */}
       <div className="absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-purple-50 to-cyan-50" />
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-blue-50" />
         <motion.div
           animate={{
             scale: [1, 1.2, 1],
@@ -46,7 +46,7 @@ export const HeroSection = () => {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-r from-indigo-400/30 to-purple-400/30 rounded-full blur-3xl"
+          className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-r from-blue-300/20 to-cyan-300/20 rounded-full blur-3xl"
         />
         <motion.div
           animate={{
@@ -58,7 +58,7 @@ export const HeroSection = () => {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-cyan-400/30 to-indigo-400/30 rounded-full blur-3xl"
+          className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-teal-300/20 to-blue-300/20 rounded-full blur-3xl"
         />
       </div>
 

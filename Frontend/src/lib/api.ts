@@ -44,7 +44,18 @@ class ApiClient {
       throw new Error(error.message || `HTTP ${response.status}`);
     }
 
-    return response.json();
+    const jsonResponse = await response.json();
+    
+    // Extract data from the wrapper if it exists
+    // The backend wraps responses as { statusCode, data, message, success }
+    if (jsonResponse && typeof jsonResponse === 'object' && 'data' in jsonResponse && 'statusCode' in jsonResponse) {
+      // The data field contains the actual response
+      const extractedData = jsonResponse.data;
+      console.log('Extracted data from response:', extractedData);
+      return extractedData as T;
+    }
+    
+    return jsonResponse as T;
   }
 
   async get<T>(endpoint: string, params?: Record<string, string>): Promise<T> {
@@ -125,16 +136,26 @@ export const authApi = {
 
 // Teams API
 export const teamsApi = {
-  list: () => api.get<Team[]>('/teams'),
+  list: async () => {
+    const response = await api.get<{ teams: Team[] }>('/teams');
+    // Handle both direct array and wrapped response
+    if (Array.isArray(response)) {
+      return response;
+    }
+    if (response && typeof response === 'object' && 'teams' in response) {
+      return (response as any).teams;
+    }
+    return response as unknown as Team[];
+  },
   
   create: (data: { name: string; description?: string }) => 
-    api.post<Team>('/teams', data),
+    api.post<{ team: Team }>('/teams', data).then((res: any) => res.team || res),
   
   get: (teamId: string) => 
-    api.get<Team>(`/teams/${teamId}`),
+    api.get<{ team: Team }>(`/teams/${teamId}`).then((res: any) => res.team || res),
   
   update: (teamId: string, data: Partial<Team>) => 
-    api.patch<Team>(`/teams/${teamId}`, data),
+    api.patch<{ team: Team }>(`/teams/${teamId}`, data).then((res: any) => res.team || res),
   
   delete: (teamId: string) => 
     api.delete(`/teams/${teamId}`),

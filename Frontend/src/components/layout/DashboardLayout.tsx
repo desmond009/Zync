@@ -105,7 +105,7 @@ export default function DashboardLayout() {
               <DropdownMenuContent align="start" className="w-56">
                 <DropdownMenuLabel>Switch team</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {teams.map((team) => (
+                {Array.isArray(teams) && teams.map((team) => (
                   <DropdownMenuItem
                     key={team.id}
                     onClick={() => selectTeam(team)}

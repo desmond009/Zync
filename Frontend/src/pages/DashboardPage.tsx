@@ -1,143 +1,144 @@
-import { useProject } from '@/contexts/ProjectContext';
-import { useTeam } from '@/contexts/TeamContext';
-import { Plus, FolderKanban, Users, Clock, TrendingUp } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { projectsApi } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTeam } from '@/contexts/TeamContext';
+import { StatCard, Card } from '@/components/dashboard/Card';
+import { MyTasks } from '@/components/dashboard/MyTasks';
+import { ActivityFeed } from '@/components/dashboard/ActivityFeed';
+import { OnlineTeammates } from '@/components/dashboard/OnlineTeammates';
+import { Briefcase, CheckSquare, AlertCircle, Users } from 'lucide-react';
 
 export default function DashboardPage() {
-  const { currentTeam, members } = useTeam();
-  const { projects, selectProject } = useProject();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { teams } = useTeam();
+  
+  const [projectCount, setProjectCount] = useState(0);
+  const [taskCount, setTaskCount] = useState(0);
+  const [dueCount, setDueCount] = useState(0);
+  const [onlineCount, setOnlineCount] = useState(0);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
 
-  const stats = [
-    {
-      label: 'Active Projects',
-      value: projects.length,
-      icon: FolderKanban,
-      color: 'text-primary',
-      bg: 'bg-primary/10',
-    },
-    {
-      label: 'Team Members',
-      value: members.length,
-      icon: Users,
-      color: 'text-accent',
-      bg: 'bg-accent/10',
-    },
-    {
-      label: 'Tasks This Week',
-      value: '—',
-      icon: Clock,
-      color: 'text-warning',
-      bg: 'bg-warning/10',
-    },
-    {
-      label: 'Completed',
-      value: '—',
-      icon: TrendingUp,
-      color: 'text-success',
-      bg: 'bg-success/10',
-    },
-  ];
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        // Load projects
+        try {
+          const projects = await projectsApi.list();
+          setProjectCount(projects.length);
+        } catch (err) {
+          console.error('Failed to load projects', err);
+        }
 
-  const handleProjectClick = (projectId: string) => {
-    selectProject(projectId);
-    navigate(`/dashboard/projects/${projectId}`);
-  };
+        // In a real implementation, fetch tasks assigned to user
+        // For now, show 0
+        setTaskCount(0);
+        setDueCount(0);
+        setOnlineCount(0);
+      } catch (error) {
+        console.error('Failed to load dashboard data', error);
+      } finally {
+        setIsLoadingStats(false);
+      }
+    };
+
+    loadDashboardData();
+  }, [teams]);
+
+  // Empty state for new users
+  if (teams.length === 0) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+        <div className="max-w-md text-center">
+          <div className="mb-6">
+            <Briefcase className="w-16 h-16 text-slate-300 mx-auto" />
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 mb-3">
+            Welcome to Zync
+          </h1>
+          <p className="text-slate-600 mb-6">
+            Let's get you started. Create your first team to begin collaborating.
+          </p>
+          <button
+            onClick={() => navigate('/dashboard/team')}
+            className="inline-flex items-center justify-center px-6 py-3 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors"
+          >
+            Create Your First Team
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 lg:p-8 space-y-8">
-      {/* Welcome Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Welcome back to {currentTeam?.name || 'your workspace'}
+    <div className="min-h-screen bg-slate-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">
+            Welcome back, {user?.name?.split(' ')[0]}
+          </h1>
+          <p className="text-slate-600">
+            Here's what's happening with your work
           </p>
         </div>
-        <Button className="gradient-primary gap-2">
-          <Plus className="h-4 w-4" />
-          New Project
-        </Button>
-      </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => (
-          <Card key={stat.label} className="border-border/50">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className={`h-12 w-12 rounded-xl ${stat.bg} flex items-center justify-center`}>
-                  <stat.icon className={`h-6 w-6 ${stat.color}`} />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{stat.value}</p>
-                  <p className="text-sm text-muted-foreground">{stat.label}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Recent Projects */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">Recent Projects</h2>
-          <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/projects')}>
-            View all
-          </Button>
+        {/* Quick Overview Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <StatCard
+            label="Active Projects"
+            value={projectCount}
+            subtitle="Across all teams"
+            icon={<Briefcase className="w-5 h-5" />}
+            isLoading={isLoadingStats}
+            onClick={() => navigate('/dashboard/projects')}
+          />
+          <StatCard
+            label="My Tasks"
+            value={taskCount}
+            subtitle="Assigned to you"
+            icon={<CheckSquare className="w-5 h-5" />}
+            isLoading={isLoadingStats}
+            onClick={() => navigate('/dashboard/projects')}
+          />
+          <StatCard
+            label="Due Soon"
+            value={dueCount}
+            subtitle="Next 7 days"
+            icon={<AlertCircle className="w-5 h-5" />}
+            isLoading={isLoadingStats}
+            onClick={() => navigate('/dashboard/projects')}
+          />
+          <StatCard
+            label="Online Now"
+            value={onlineCount}
+            subtitle="Teammates"
+            icon={<Users className="w-5 h-5" />}
+            isLoading={isLoadingStats}
+          />
         </div>
 
-        {projects.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="py-12 text-center">
-              <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center mx-auto mb-4">
-                <FolderKanban className="h-6 w-6 text-muted-foreground" />
-              </div>
-              <h3 className="font-medium mb-1">No projects yet</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Create your first project to get started
-              </p>
-              <Button className="gradient-primary gap-2">
-                <Plus className="h-4 w-4" />
-                Create Project
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {projects.slice(0, 6).map((project) => (
-              <Card
-                key={project.id}
-                className="border-border/50 hover:border-primary/30 hover:shadow-soft transition-all cursor-pointer group"
-                onClick={() => handleProjectClick(project.id)}
-              >
-                <CardHeader>
-                  <CardTitle className="text-lg group-hover:text-primary transition-colors">
-                    {project.name}
-                  </CardTitle>
-                  <CardDescription className="line-clamp-2">
-                    {project.description || 'No description'}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <FolderKanban className="h-4 w-4" />
-                      {project.taskCount} tasks
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Users className="h-4 w-4" />
-                      {project.memberCount} members
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Primary Focus (My Tasks) */}
+          <div className="lg:col-span-2">
+            <MyTasks
+              onViewAll={() => navigate('/dashboard/projects')}
+            />
           </div>
-        )}
+
+          {/* Right Column - Activity & Presence */}
+          <div className="space-y-6">
+            <ActivityFeed limit={6} />
+            <OnlineTeammates limit={5} />
+          </div>
+        </div>
+
+        {/* Footer Info */}
+        <div className="mt-8 text-center text-sm text-slate-500">
+          <p>Last updated just now • All times in your local timezone</p>
+        </div>
       </div>
     </div>
   );

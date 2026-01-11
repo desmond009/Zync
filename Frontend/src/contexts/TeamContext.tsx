@@ -31,11 +31,15 @@ export function TeamProvider({ children }: { children: React.ReactNode }) {
     
     try {
       const fetchedTeams = await teamsApi.list();
-      setTeams(fetchedTeams);
+      console.log('Fetched teams:', fetchedTeams);
+      
+      // Ensure fetchedTeams is an array
+      const teamsArray = Array.isArray(fetchedTeams) ? fetchedTeams : [];
+      setTeams(teamsArray);
       
       // Auto-select first team if none selected
-      if (!currentTeam && fetchedTeams.length > 0) {
-        setCurrentTeam(fetchedTeams[0]);
+      if (!currentTeam && teamsArray.length > 0) {
+        setCurrentTeam(teamsArray[0]);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load teams');

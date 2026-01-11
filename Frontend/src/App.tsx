@@ -8,6 +8,7 @@ import { SocketProvider } from "@/contexts/SocketContext";
 import { TeamProvider } from "@/contexts/TeamContext";
 import { ProjectProvider } from "@/contexts/ProjectContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import PublicRoute from "@/components/auth/PublicRoute";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
@@ -33,8 +34,8 @@ const App = () => (
                 <Routes>
                   {/* Public routes */}
                   <Route path="/" element={<LandingPage />} />
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/signup" element={<SignupPage />} />
+                  <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+                  <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
 
                   {/* Protected dashboard routes */}
                   <Route

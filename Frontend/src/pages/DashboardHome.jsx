@@ -17,90 +17,138 @@ import { useProjectStore } from '@/store/projectStore';
 import { useAuthStore } from '@/store/authStore';
 
 // Stat Card Component
-const StatCard = ({ icon: Icon, label, value, trend, color = 'violet' }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    className={`rounded-xl border border-slate-800/50 bg-gradient-to-br from-slate-900/50 to-slate-950/50 p-6 backdrop-blur-sm hover:border-slate-700/50 transition-all group`}
-  >
-    <div className="flex items-start justify-between">
-      <div>
-        <p className="text-slate-400 text-sm font-medium mb-2">{label}</p>
-        <p className="text-3xl font-bold text-slate-50 mb-1">{value}</p>
-        {trend && (
-          <p className={`text-xs font-medium flex items-center gap-1 ${trend > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-            <TrendingUp size={14} />
-            {trend > 0 ? '+' : ''}{trend}% from last month
-          </p>
-        )}
+const StatCard = ({ icon: Icon, label, value, trend, color = 'violet' }) => {
+  const colorGradients = {
+    violet: 'from-violet-600/40 via-purple-500/25 to-violet-700/35',
+    indigo: 'from-indigo-600/40 via-blue-500/25 to-cyan-600/35',
+    emerald: 'from-emerald-600/40 via-teal-500/25 to-green-600/35',
+    blue: 'from-cyan-500/40 via-blue-600/25 to-teal-600/35',
+  };
+  
+  const colorBg = colorGradients[color] || colorGradients.violet;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -8, boxShadow: '0 25px 50px rgba(100, 50, 255, 0.15)' }}
+      className={`rounded-3xl border border-white/15 bg-gradient-to-br ${colorBg} backdrop-blur-xl p-7 hover:border-white/30 transition-all group cursor-pointer relative overflow-hidden`}
+    >
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+        <div className="absolute inset-0 bg-gradient-to-br from-white/8 via-transparent to-white/8"></div>
       </div>
-      <div
-        className={`w-12 h-12 rounded-lg bg-${color}-600/20 flex items-center justify-center group-hover:scale-110 transition-transform`}
-      >
-        <Icon className={`text-${color}-400`} size={24} />
+      
+      <div className="flex items-start justify-between relative z-10">
+        <div>
+          <p className="text-white/80 text-xs font-black mb-3 uppercase tracking-widest">{label}</p>
+          <p className="text-5xl font-black text-white mb-2">{value}</p>
+          {trend && (
+            <motion.p 
+              whileHover={{ x: 4 }}
+              className={`text-xs font-bold flex items-center gap-1.5 ${trend > 0 ? 'text-emerald-300' : 'text-red-300'}`}
+            >
+              <TrendingUp size={14} />
+              {trend > 0 ? '+' : ''}{trend}% from last month
+            </motion.p>
+          )}
+        </div>
+        <motion.div
+          whileHover={{ scale: 1.18, rotate: 12 }}
+          className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/25 shadow-lg"
+        >
+          <Icon className="text-white" size={32} />
+        </motion.div>
       </div>
-    </div>
-  </motion.div>
-);
+    </motion.div>
+  );
+};
 
 // Project Card Component
-const ProjectCard = ({ project }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    whileHover={{ y: -4 }}
-    className="rounded-lg border border-slate-800/50 bg-slate-900/30 p-4 hover:border-slate-700/50 transition-all group cursor-pointer"
-  >
-    <div className="flex items-start justify-between mb-3">
-      <div className="flex-1">
-        <h3 className="font-semibold text-slate-200 group-hover:text-white transition-colors">
-          {project.name}
-        </h3>
-        <p className="text-xs text-slate-500 mt-1">{project.description}</p>
+const ProjectCard = ({ project }) => {
+  const gradients = [
+    'from-violet-600/45 via-purple-500/20 to-blue-600/40',
+    'from-cyan-600/45 via-teal-500/20 to-emerald-600/40',
+    'from-orange-600/45 via-pink-500/20 to-rose-600/40',
+    'from-indigo-600/45 via-violet-500/20 to-purple-600/40',
+  ];
+  
+  const gradientIndex = project.name.charCodeAt(0) % gradients.length;
+  const bgGradient = gradients[gradientIndex];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -8, boxShadow: '0 25px 50px rgba(100, 50, 255, 0.15)' }}
+      className={`rounded-3xl border border-white/15 bg-gradient-to-br ${bgGradient} backdrop-blur-xl p-6 hover:border-white/30 transition-all group cursor-pointer relative overflow-hidden`}
+    >
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+        <div className="absolute inset-0 bg-gradient-to-br from-white/8 via-transparent to-white/8"></div>
       </div>
-      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-        {project.name.charAt(0)}
+
+      <div className="flex items-start justify-between mb-5 relative z-10">
+        <div className="flex-1">
+          <h3 className="font-black text-white group-hover:text-white transition-colors text-lg leading-tight">
+            {project.name}
+          </h3>
+          <p className="text-sm text-white/70 mt-2 leading-relaxed">{project.description}</p>
+        </div>
+        <motion.div 
+          whileHover={{ scale: 1.12, rotate: 8 }}
+          className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-white text-sm font-black flex-shrink-0 backdrop-blur-md border border-white/30 shadow-lg"
+        >
+          {project.name.charAt(0).toUpperCase()}
+        </motion.div>
       </div>
-    </div>
-    <div className="flex items-center justify-between pt-3 border-t border-slate-800/50">
-      <div className="flex items-center gap-4 text-xs text-slate-400">
-        <span className="flex items-center gap-1">
-          <CheckCircle2 size={14} className="text-emerald-500" />
-          {project.tasks?.filter(t => t.status === 'DONE').length || 0} done
-        </span>
-        <span className="flex items-center gap-1">
-          <Users size={14} className="text-blue-500" />
-          {project.members?.length || 1} member
-        </span>
+      <div className="flex items-center justify-between pt-4 border-t border-white/20 relative z-10">
+        <div className="flex items-center gap-5 text-xs text-white/80">
+          <motion.span 
+            whileHover={{ x: 4 }}
+            className="flex items-center gap-2 font-bold"
+          >
+            <CheckCircle2 size={16} className="text-teal-300" />
+            {project.tasks?.filter(t => t.status === 'DONE').length || 0}
+          </motion.span>
+          <motion.span 
+            whileHover={{ x: -4 }}
+            className="flex items-center gap-2 font-bold"
+          >
+            <Users size={16} className="text-cyan-300" />
+            {project.members?.length || 1}
+          </motion.span>
+        </div>
+        <motion.div whileHover={{ x: 4 }}>
+          <ArrowRight size={18} className="text-white/70 group-hover:text-white/95 transition-colors" />
+        </motion.div>
       </div>
-      <ArrowRight size={16} className="text-slate-600 group-hover:text-violet-400 transition-colors" />
-    </div>
-  </motion.div>
-);
+    </motion.div>
+  );
+};
 
 // Task Item Component
 const TaskItem = ({ task, project }) => (
   <motion.div
     initial={{ opacity: 0, x: -20 }}
     animate={{ opacity: 1, x: 0 }}
-    className="flex items-center gap-4 p-3 rounded-lg border border-slate-800/30 bg-slate-900/20 hover:bg-slate-900/40 transition-colors group"
+    whileHover={{ x: 4 }}
+    className="flex items-center gap-4 p-4 rounded-2xl border border-white/15 bg-white/6 hover:bg-white/12 transition-colors group backdrop-blur-sm"
   >
     <input
       type="checkbox"
       checked={task.status === 'DONE'}
-      className="w-5 h-5 rounded border-slate-600 text-violet-600 cursor-pointer"
+      className="w-5 h-5 rounded border-white/40 text-teal-400 cursor-pointer accent-teal-400"
       readOnly
     />
     <div className="flex-1 min-w-0">
-      <p className={`text-sm font-medium transition-colors ${task.status === 'DONE' ? 'text-slate-500 line-through' : 'text-slate-200 group-hover:text-white'}`}>
+      <p className={`text-sm font-bold transition-colors ${task.status === 'DONE' ? 'text-white/35 line-through' : 'text-white/95 group-hover:text-white'}`}>
         {task.title}
       </p>
-      <p className="text-xs text-slate-500">{project}</p>
+      <p className="text-xs text-white/50 font-medium mt-0.5">{project}</p>
     </div>
-    <div className={`px-2 py-1 rounded text-xs font-medium flex-shrink-0 ${
-      task.priority === 'HIGH' ? 'bg-red-600/20 text-red-400' :
-      task.priority === 'MEDIUM' ? 'bg-yellow-600/20 text-yellow-400' :
-      'bg-green-600/20 text-green-400'
+    <div className={`px-3 py-1.5 rounded-lg text-xs font-black flex-shrink-0 backdrop-blur-md border ${
+      task.priority === 'HIGH' ? 'bg-red-600/35 text-red-200 border-red-400/40' :
+      task.priority === 'MEDIUM' ? 'bg-amber-600/35 text-amber-200 border-amber-400/40' :
+      'bg-emerald-600/35 text-emerald-200 border-emerald-400/40'
     }`}>
       {task.priority}
     </div>
@@ -164,16 +212,76 @@ export const DashboardHome = () => {
 
   return (
     <DashboardLayout>
+      {/* Animated gradient background */}
+      <div className="fixed inset-0 -z-10 overflow-hidden">
+        <motion.div 
+          className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 opacity-95"
+        />
+        <motion.div 
+          animate={{
+            backgroundPosition: ['0% 0%', '100% 100%'],
+          }}
+          transition={{
+            duration: 18,
+            repeat: Infinity,
+            repeatType: 'reverse',
+          }}
+          className="absolute inset-0 bg-gradient-to-br from-violet-900/25 via-cyan-900/15 to-teal-900/20 opacity-70"
+          style={{
+            backgroundSize: '200% 200%',
+          }}
+        />
+        <motion.div 
+          animate={{
+            backgroundPosition: ['100% 100%', '0% 0%'],
+          }}
+          transition={{
+            duration: 22,
+            repeat: Infinity,
+            repeatType: 'reverse',
+          }}
+          className="absolute inset-0 bg-gradient-to-bl from-orange-900/15 via-transparent to-indigo-900/20 opacity-60"
+          style={{
+            backgroundSize: '200% 200%',
+          }}
+        />
+        <motion.div 
+          animate={{
+            backgroundPosition: ['0% 100%', '100% 0%'],
+          }}
+          transition={{
+            duration: 25,
+            repeat: Infinity,
+            repeatType: 'reverse',
+          }}
+          className="absolute inset-0 bg-gradient-to-tr from-transparent via-purple-900/10 to-cyan-900/15 opacity-50"
+          style={{
+            backgroundSize: '200% 200%',
+          }}
+        />
+      </div>
+
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
+        className="mb-8 relative z-10"
       >
-        <h1 className="text-3xl font-bold text-slate-50 mb-2">
+        <motion.h1 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="text-5xl md:text-6xl font-black text-white mb-3 tracking-tight"
+        >
           Welcome back, {user?.name?.split(' ')[0] || 'there'}! 👋
-        </h1>
-        <p className="text-slate-400">Here's what's happening with your projects today.</p>
+        </motion.h1>
+        <motion.p 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.1 }}
+          className="text-white/60 text-lg font-medium"
+        >
+          Here's what's happening with your projects today.
+        </motion.p>
       </motion.div>
 
       {/* Stats Grid */}
@@ -181,7 +289,7 @@ export const DashboardHome = () => {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 relative z-10"
       >
         <StatCard
           icon={FolderOpen}
@@ -211,7 +319,7 @@ export const DashboardHome = () => {
       </motion.div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-10">
         {/* Projects Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -219,30 +327,41 @@ export const DashboardHome = () => {
           transition={{ delay: 0.4 }}
           className="lg:col-span-2"
         >
-          <div className="flex items-center justify-between mb-6">
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex items-center justify-between mb-6"
+          >
             <div>
-              <h2 className="text-xl font-bold text-slate-50">Your Projects</h2>
-              <p className="text-sm text-slate-400 mt-1">
+              <h2 className="text-3xl font-black text-white">Your Projects</h2>
+              <p className="text-white/60 text-sm mt-2 font-medium">
                 {projects.length} active {projects.length === 1 ? 'project' : 'projects'}
               </p>
             </div>
-            <Link
-              to="/projects"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white font-medium transition-colors"
-            >
-              <Plus size={18} />
-              New Project
-            </Link>
-          </div>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Link
+                to="/projects"
+                className="inline-flex items-center gap-3 px-6 py-3 rounded-xl bg-gradient-to-r from-white to-gray-200 hover:from-gray-100 hover:to-white text-black font-black transition-all shadow-lg hover:shadow-xl"
+              >
+                <Plus size={20} />
+                New Project
+              </Link>
+            </motion.div>
+          </motion.div>
 
           {isLoading ? (
             <div className="space-y-4">
               {[1, 2, 3].map(i => (
-                <div key={i} className="h-24 rounded-lg bg-slate-800/50 animate-pulse" />
+                <motion.div 
+                  key={i} 
+                  className="h-28 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 animate-pulse"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                />
               ))}
             </div>
           ) : projects.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {projects.slice(0, 6).map((project, idx) => (
                 <motion.div
                   key={project._id}
@@ -257,18 +376,29 @@ export const DashboardHome = () => {
               ))}
             </div>
           ) : (
-            <div className="rounded-lg border border-slate-800/50 bg-slate-900/30 p-12 text-center">
-              <FolderOpen className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-slate-300 mb-2">No projects yet</h3>
-              <p className="text-slate-500 mb-6">Create your first project to get started</p>
-              <Link
-                to="/projects"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white font-medium transition-colors"
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-12 text-center"
+            >
+              <motion.div
+                animate={{ y: [0, -10, 0] }}
+                transition={{ duration: 2, repeat: Infinity }}
               >
-                <Plus size={18} />
-                Create Project
-              </Link>
-            </div>
+                <FolderOpen className="w-16 h-16 text-white/30 mx-auto mb-6" />
+              </motion.div>
+              <h3 className="text-2xl font-black text-white mb-2">No projects yet</h3>
+              <p className="text-white/60 mb-8 font-medium">Create your first project to get started</p>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Link
+                  to="/projects"
+                  className="inline-flex items-center gap-3 px-6 py-3 rounded-xl bg-gradient-to-r from-white to-gray-200 hover:from-gray-100 hover:to-white text-black font-black transition-all shadow-lg hover:shadow-xl"
+                >
+                  <Plus size={20} />
+                  Create Project
+                </Link>
+              </motion.div>
+            </motion.div>
           )}
         </motion.div>
 
@@ -279,23 +409,29 @@ export const DashboardHome = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="rounded-xl border border-slate-800/50 bg-gradient-to-br from-slate-900/50 to-slate-950/50 p-6 backdrop-blur-sm"
+            className="rounded-3xl border border-white/15 bg-gradient-to-br from-violet-900/30 via-cyan-900/15 to-teal-900/20 backdrop-blur-xl p-7"
           >
-            <h3 className="text-lg font-bold text-slate-50 mb-4 flex items-center gap-2">
-              <Clock size={20} className="text-violet-400" />
+            <h3 className="text-lg font-black text-white mb-5 flex items-center gap-3">
+              <Clock size={24} className="text-cyan-300" />
               Recent Tasks
             </h3>
 
             {recentTasks.length > 0 ? (
               <div className="space-y-3">
                 {recentTasks.map((task, idx) => (
-                  <TaskItem key={task._id} task={task} project={task.projectName} />
+                  <motion.div key={task._id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: idx * 0.05 }}>
+                    <TaskItem task={task} project={task.projectName} />
+                  </motion.div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-slate-500 text-center py-8">
+              <motion.p 
+                animate={{ y: [0, -8, 0] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="text-sm text-white/60 text-center py-8 font-medium"
+              >
                 No active tasks. All caught up! 🎉
-              </p>
+              </motion.p>
             )}
           </motion.div>
 
@@ -304,31 +440,37 @@ export const DashboardHome = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="rounded-xl border border-slate-800/50 bg-gradient-to-br from-slate-900/50 to-slate-950/50 p-6 backdrop-blur-sm"
+            className="rounded-3xl border border-white/15 bg-gradient-to-br from-indigo-900/30 via-purple-900/15 to-orange-900/15 backdrop-blur-xl p-7"
           >
-            <h3 className="text-lg font-bold text-slate-50 mb-4">Quick Actions</h3>
+            <h3 className="text-lg font-black text-white mb-5">Quick Actions</h3>
             <div className="space-y-2">
-              <Link
-                to="/projects/new"
-                className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800/50 transition-colors text-slate-300 hover:text-white"
-              >
-                <Plus size={18} className="text-violet-400" />
-                <span className="text-sm font-medium">New Project</span>
-              </Link>
-              <Link
-                to="/teams"
-                className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800/50 transition-colors text-slate-300 hover:text-white"
-              >
-                <Users size={18} className="text-blue-400" />
-                <span className="text-sm font-medium">Browse Teams</span>
-              </Link>
-              <Link
-                to="/chat"
-                className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800/50 transition-colors text-slate-300 hover:text-white"
-              >
-                <AlertCircle size={18} className="text-emerald-400" />
-                <span className="text-sm font-medium">View Messages</span>
-              </Link>
+              <motion.div whileHover={{ x: 4 }}>
+                <Link
+                  to="/projects/new"
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/10 transition-colors text-white font-bold"
+                >
+                  <Plus size={20} className="text-teal-300" />
+                  <span className="text-sm">New Project</span>
+                </Link>
+              </motion.div>
+              <motion.div whileHover={{ x: 4 }}>
+                <Link
+                  to="/teams"
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/10 transition-colors text-white font-bold"
+                >
+                  <Users size={20} className="text-cyan-300" />
+                  <span className="text-sm">Browse Teams</span>
+                </Link>
+              </motion.div>
+              <motion.div whileHover={{ x: 4 }}>
+                <Link
+                  to="/chat"
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/10 transition-colors text-white font-bold"
+                >
+                  <AlertCircle size={20} className="text-orange-300" />
+                  <span className="text-sm">View Messages</span>
+                </Link>
+              </motion.div>
             </div>
           </motion.div>
         </div>

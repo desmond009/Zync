@@ -12,10 +12,8 @@ import { LandingFooter } from './LandingFooter';
 
 export const LandingPage = () => {
   useEffect(() => {
-    // Force light theme for landing page
+    // Force light theme for landing page - set immediately
     const root = document.documentElement;
-    const wasDark = root.classList.contains('dark');
-    
     root.classList.remove('dark');
     root.classList.add('light');
     
@@ -23,12 +21,8 @@ export const LandingPage = () => {
     document.documentElement.style.scrollBehavior = 'smooth';
     
     return () => {
-      // Restore previous theme when leaving landing page
+      // Restore scroll behavior when leaving
       document.documentElement.style.scrollBehavior = 'auto';
-      root.classList.remove('light');
-      if (wasDark) {
-        root.classList.add('dark');
-      }
     };
   }, []);
 

@@ -11,6 +11,14 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
+    <script>
+      // Force light theme for landing page - run before React loads
+      if (window.location.pathname === '/' || window.location.pathname === '') {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+        localStorage.setItem('theme', 'light');
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

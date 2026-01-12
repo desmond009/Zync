@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 
 interface ActivityFeedProps {
   projectId: string;
+  limit?: number;
 }
 
 const ACTIVITY_ICONS = {
@@ -29,7 +30,7 @@ const ACTIVITY_COLORS = {
   member_joined: 'text-accent bg-accent/10',
 };
 
-export default function ActivityFeed({ projectId }: ActivityFeedProps) {
+export default function ActivityFeed({ projectId, limit }: ActivityFeedProps) {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -38,20 +39,24 @@ export default function ActivityFeed({ projectId }: ActivityFeedProps) {
   const loadActivities = useCallback(async (pageNum: number = 1) => {
     setIsLoading(true);
     try {
-      const response = await activityApi.list(projectId, { page: pageNum, limit: 20 });
+      const response = await activityApi.list(projectId, { page: pageNum, limit: limit || 20 });
+      // API currently returns Activity[] directly, ensuring it's an array
+      const newActivities = Array.isArray(response) ? response : [];
+
       if (pageNum === 1) {
-        setActivities(response.activities);
+        setActivities(newActivities);
       } else {
-        setActivities((prev) => [...prev, ...response.activities]);
+        setActivities((prev) => [...prev, ...newActivities]);
       }
-      setHasMore(response.hasMore);
+      // Simple pagination check: if we got less than requested, no more
+      setHasMore(newActivities.length === (limit || 20));
       setPage(pageNum);
     } catch (error) {
       console.error('Failed to load activities:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [projectId]);
+  }, [projectId, limit]);
 
   useEffect(() => {
     loadActivities();

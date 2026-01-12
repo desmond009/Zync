@@ -6,7 +6,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (data: { email: string; password: string; name: string }) => Promise<void>;
+  signup: (data: { email: string; password: string; firstName: string; lastName: string }) => Promise<void>;
   logout: () => void;
 }
 
@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(user);
   }, []);
 
-  const signup = useCallback(async (data: { email: string; password: string; name: string }) => {
+  const signup = useCallback(async (data: { email: string; password: string; firstName: string; lastName: string }) => {
     const { user, accessToken } = await authApi.signup(data);
     localStorage.setItem('auth_token', accessToken);
     setUser(user);

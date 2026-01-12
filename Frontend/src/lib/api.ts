@@ -126,7 +126,7 @@ export const authApi = {
   login: (email: string, password: string) => 
     api.post<{ user: User; accessToken: string; refreshToken: string }>('/auth/login', { email, password }),
   
-  signup: (data: { email: string; password: string; name: string }) => 
+  signup: (data: { email: string; password: string; firstName: string; lastName: string }) => 
     api.post<{ user: User; accessToken: string; refreshToken: string }>('/auth/register', data),
   
   logout: () => api.post('/auth/logout'),

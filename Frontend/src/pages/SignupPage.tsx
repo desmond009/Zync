@@ -10,7 +10,8 @@ import { Loader2, Zap } from 'lucide-react';
 export default function SignupPage() {
   const navigate = useNavigate();
   const { signup, isAuthenticated } = useAuth();
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -29,7 +30,7 @@ export default function SignupPage() {
     setIsLoading(true);
 
     try {
-      await signup({ email, password, name });
+      await signup({ email, password, firstName, lastName });
       // Let the useEffect handle navigation
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Signup failed');
@@ -41,7 +42,7 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="absolute inset-0 gradient-hero opacity-5" />
-      
+
       <Card className="w-full max-w-md relative animate-scale-in shadow-lifted border-border/50">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
@@ -52,7 +53,7 @@ export default function SignupPage() {
           <CardTitle className="text-2xl font-bold">Create your account</CardTitle>
           <CardDescription>Get started with Zync in seconds</CardDescription>
         </CardHeader>
-        
+
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             {error && (
@@ -60,20 +61,34 @@ export default function SignupPage() {
                 {error}
               </div>
             )}
-            
-            <div className="space-y-2">
-              <Label htmlFor="name">Full name</Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="Jane Doe"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className="h-11"
-              />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First name</Label>
+                <Input
+                  id="firstName"
+                  type="text"
+                  placeholder="Jane"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                  className="h-11"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last name</Label>
+                <Input
+                  id="lastName"
+                  type="text"
+                  placeholder="Doe"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                  className="h-11"
+                />
+              </div>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -86,7 +101,7 @@ export default function SignupPage() {
                 className="h-11"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
@@ -99,10 +114,12 @@ export default function SignupPage() {
                 minLength={8}
                 className="h-11"
               />
-              <p className="text-xs text-muted-foreground">Must be at least 8 characters</p>
+              <p className="text-xs text-muted-foreground">
+                Min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char
+              </p>
             </div>
           </CardContent>
-          
+
           <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full h-11 gradient-primary" disabled={isLoading}>
               {isLoading ? (
@@ -114,7 +131,7 @@ export default function SignupPage() {
                 'Create account'
               )}
             </Button>
-            
+
             <p className="text-sm text-muted-foreground text-center">
               Already have an account?{' '}
               <Link to="/login" className="text-primary hover:underline font-medium">

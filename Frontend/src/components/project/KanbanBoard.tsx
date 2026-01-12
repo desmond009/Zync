@@ -124,7 +124,7 @@ export default function KanbanBoard({
           return (
             <div
               key={column.id}
-              className="w-72 flex flex-col bg-secondary/30 rounded-xl"
+              className="w-72 flex flex-col bg-[#18181b] rounded-lg border border-[#27272a]"
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, column.id)}
             >
@@ -132,18 +132,18 @@ export default function KanbanBoard({
               <div className="p-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className={cn('h-2 w-2 rounded-full', column.color.replace('/10', ''))} />
-                  <h3 className="font-medium text-sm">{column.label}</h3>
-                  <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                  <h3 className="font-medium text-xs text-[#e4e4e7]">{column.label}</h3>
+                  <span className="text-xs text-[#71717a]">
                     {columnTasks.length}
                   </span>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7"
+                  className="h-6 w-6 text-[#a1a1aa] hover:text-[#e4e4e7] hover:bg-[#27272a]"
                   onClick={() => openCreateDialog(column.id)}
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-3.5 w-3.5" />
                 </Button>
               </div>
 
@@ -155,16 +155,16 @@ export default function KanbanBoard({
                     draggable
                     onDragStart={(e) => handleDragStart(e, task)}
                     className={cn(
-                      'cursor-grab active:cursor-grabbing border-border/50 hover:border-primary/30 hover:shadow-soft transition-all group',
+                      'cursor-grab active:cursor-grabbing bg-[#27272a] border-[#3f3f46] hover:border-[#52525b] transition-all group shadow-none',
                       draggedTask?.id === task.id && 'opacity-50'
                     )}
                   >
                     <CardContent className="p-3">
                       <div className="flex items-start gap-2">
-                        <GripVertical className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-0.5 flex-shrink-0" />
+                        <GripVertical className="h-3.5 w-3.5 text-[#52525b] opacity-0 group-hover:opacity-100 transition-opacity mt-0.5 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
-                            <p className="font-medium text-sm leading-tight">
+                            <p className="font-medium text-sm leading-tight text-[#e4e4e7]">
                               {task.title}
                             </p>
                             <DropdownMenu>
@@ -172,14 +172,14 @@ export default function KanbanBoard({
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                                  className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 text-[#a1a1aa] hover:text-[#e4e4e7] hover:bg-[#3f3f46]"
                                 >
-                                  <MoreHorizontal className="h-4 w-4" />
+                                  <MoreHorizontal className="h-3.5 w-3.5" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem>Edit</DropdownMenuItem>
-                                <DropdownMenuItem className="text-destructive">
+                              <DropdownMenuContent align="end" className="bg-[#18181b] border-[#27272a] text-[#e4e4e7]">
+                                <DropdownMenuItem className="focus:bg-[#27272a] focus:text-[#e4e4e7]">Edit</DropdownMenuItem>
+                                <DropdownMenuItem className="text-red-400 focus:bg-red-900/20 focus:text-red-400">
                                   Delete
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
@@ -187,7 +187,7 @@ export default function KanbanBoard({
                           </div>
 
                           {task.description && (
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                            <p className="text-xs text-[#a1a1aa] mt-1 line-clamp-2">
                               {task.description}
                             </p>
                           )}
@@ -195,15 +195,15 @@ export default function KanbanBoard({
                           <div className="flex items-center gap-2 mt-3">
                             <Badge
                               variant="secondary"
-                              className={cn('text-xs', PRIORITY_COLORS[task.priority])}
+                              className={cn('text-[10px] px-1.5 py-0 h-5 bg-[#3f3f46] text-[#a1a1aa] hover:bg-[#52525b]', PRIORITY_COLORS[task.priority])}
                             >
                               {task.priority}
                             </Badge>
 
                             {task.assignee && (
-                              <Avatar className="h-5 w-5 ml-auto">
+                              <Avatar className="h-4 w-4 ml-auto">
                                 <AvatarImage src={task.assignee.avatar} />
-                                <AvatarFallback className="text-[10px]">
+                                <AvatarFallback className="text-[8px] bg-[#3f3f46] text-[#a1a1aa]">
                                   {task.assignee.name
                                     .split(' ')
                                     .map((n) => n[0])
@@ -219,9 +219,12 @@ export default function KanbanBoard({
                 ))}
 
                 {columnTasks.length === 0 && (
-                  <div className="h-20 border-2 border-dashed border-border/50 rounded-lg flex items-center justify-center">
-                    <p className="text-xs text-muted-foreground">Drop tasks here</p>
-                  </div>
+                  <button
+                    onClick={() => openCreateDialog(column.id)}
+                    className="h-8 w-full border border-dashed border-[#3f3f46] rounded flex items-center justify-center text-xs text-[#52525b] hover:text-[#a1a1aa] hover:border-[#52525b] hover:bg-[#27272a] transition-all"
+                  >
+                    <Plus className="h-3 w-3 mr-1" /> Add task
+                  </button>
                 )}
               </div>
             </div>

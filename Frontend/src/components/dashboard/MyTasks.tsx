@@ -1,11 +1,74 @@
 import React, { useEffect, useState } from 'react';
 import { tasksApi, Task } from '@/lib/api';
-import { Card } from './Card';
-import { AlertCircle, CheckCircle2, Clock } from 'lucide-react';
+import { SectionCard, Skeleton } from './Card';
+import {
+  CheckCircle2,
+  Clock,
+  Circle,
+  ArrowRight,
+  ListTodo,
+  Sparkles
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface MyTasksProps {
   onViewAll?: () => void;
 }
+
+const PRIORITY_STYLES = {
+  urgent: {
+    bg: 'bg-gradient-to-r from-rose-500/10 to-orange-500/10',
+    text: 'text-rose-600',
+    border: 'border-rose-200',
+    dot: 'bg-rose-500',
+  },
+  high: {
+    bg: 'bg-gradient-to-r from-orange-500/10 to-amber-500/10',
+    text: 'text-orange-600',
+    border: 'border-orange-200',
+    dot: 'bg-orange-500',
+  },
+  medium: {
+    bg: 'bg-gradient-to-r from-blue-500/10 to-cyan-500/10',
+    text: 'text-blue-600',
+    border: 'border-blue-200',
+    dot: 'bg-blue-500',
+  },
+  low: {
+    bg: 'bg-gradient-to-r from-slate-500/10 to-slate-400/10',
+    text: 'text-slate-600',
+    border: 'border-slate-200',
+    dot: 'bg-slate-400',
+  },
+};
+
+const STATUS_STYLES = {
+  done: {
+    icon: CheckCircle2,
+    color: 'text-emerald-500',
+    bg: 'bg-emerald-50',
+  },
+  in_progress: {
+    icon: Clock,
+    color: 'text-cyan-500',
+    bg: 'bg-cyan-50',
+  },
+  todo: {
+    icon: Circle,
+    color: 'text-slate-300',
+    bg: 'bg-slate-50',
+  },
+  backlog: {
+    icon: Circle,
+    color: 'text-slate-300',
+    bg: 'bg-slate-50',
+  },
+  review: {
+    icon: Clock,
+    color: 'text-violet-500',
+    bg: 'bg-violet-50',
+  },
+};
 
 export const MyTasks: React.FC<MyTasksProps> = ({ onViewAll }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -13,35 +76,8 @@ export const MyTasks: React.FC<MyTasksProps> = ({ onViewAll }) => {
 
   useEffect(() => {
     // In a real implementation, fetch tasks assigned to current user
-    // For now, we'll show a loading state
     setIsLoading(false);
   }, []);
-
-  const getPriorityColor = (priority?: string) => {
-    switch (priority) {
-      case 'urgent':
-        return 'bg-red-100 text-red-700';
-      case 'high':
-        return 'bg-orange-100 text-orange-700';
-      case 'medium':
-        return 'bg-blue-100 text-blue-700';
-      case 'low':
-        return 'bg-slate-100 text-slate-700';
-      default:
-        return 'bg-slate-100 text-slate-700';
-    }
-  };
-
-  const getStatusIcon = (status?: string) => {
-    switch (status) {
-      case 'done':
-        return <CheckCircle2 className="w-4 h-4 text-green-600" />;
-      case 'in_progress':
-        return <Clock className="w-4 h-4 text-blue-600" />;
-      default:
-        return <AlertCircle className="w-4 h-4 text-slate-400" />;
-    }
-  };
 
   const isUrgent = (dueDate?: string) => {
     if (!dueDate) return false;
@@ -51,88 +87,136 @@ export const MyTasks: React.FC<MyTasksProps> = ({ onViewAll }) => {
     return days <= 1;
   };
 
+  const formatDueDate = (dueDate: string) => {
+    const date = new Date(dueDate);
+    const now = new Date();
+    const diffDays = Math.floor((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Tomorrow';
+    if (diffDays < 7) return `${diffDays} days`;
+
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
   if (isLoading) {
     return (
-      <Card>
-        <div className="space-y-4">
-          <div className="h-6 w-24 bg-slate-200 rounded animate-pulse" />
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-12 bg-slate-100 rounded animate-pulse" />
+      <SectionCard
+        title="My Tasks"
+        icon={<ListTodo className="w-4 h-4" />}
+      >
+        <div className="space-y-3">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="flex items-center gap-3 p-3">
+              <Skeleton className="w-8 h-8 rounded-xl" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-3/4 rounded" />
+                <Skeleton className="h-3 w-1/2 rounded" />
+              </div>
+            </div>
           ))}
         </div>
-      </Card>
+      </SectionCard>
     );
   }
 
   return (
-    <Card>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-slate-900">My Tasks</h2>
-        {tasks.length > 0 && (
-          <span className="text-xs font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded">
-            {tasks.length}
-          </span>
-        )}
-      </div>
+    <SectionCard
+      title="My Tasks"
+      icon={<ListTodo className="w-4 h-4" />}
+      isEmpty={tasks.length === 0}
+      emptyIcon={<Sparkles className="w-7 h-7" />}
+      emptyTitle="All caught up!"
+      emptySubtitle="No tasks assigned to you right now"
+      action={
+        tasks.length > 0 && (
+          <button
+            onClick={onViewAll}
+            className="text-sm font-medium text-indigo-600 hover:text-indigo-700 flex items-center gap-1 transition-colors"
+          >
+            View all
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        )
+      }
+    >
+      <div className="space-y-2">
+        {tasks.slice(0, 6).map((task, index) => {
+          const priority = task.priority || 'low';
+          const status = task.status || 'todo';
+          const priorityStyle = PRIORITY_STYLES[priority as keyof typeof PRIORITY_STYLES] || PRIORITY_STYLES.low;
+          const statusStyle = STATUS_STYLES[status as keyof typeof STATUS_STYLES] || STATUS_STYLES.todo;
+          const StatusIcon = statusStyle.icon;
 
-      {tasks.length === 0 ? (
-        <div className="py-8 text-center">
-          <CheckCircle2 className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-          <p className="text-sm text-slate-500">No tasks assigned to you</p>
-          <p className="text-xs text-slate-400 mt-1">Great work! You're all caught up.</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {tasks.slice(0, 6).map((task) => (
+          return (
             <div
               key={task.id}
-              className="flex items-start justify-between p-3 rounded-md hover:bg-slate-50 transition-colors cursor-pointer group"
+              className={cn(
+                'group flex items-center gap-3 p-3 rounded-xl transition-all duration-200 cursor-pointer',
+                'hover:bg-slate-50/80 hover:shadow-sm',
+                'animate-fade-in-up',
+              )}
+              style={{ animationDelay: `${index * 50}ms` }}
             >
-              <div className="flex items-start gap-3 flex-1 min-w-0">
-                <div className="mt-1">{getStatusIcon(task.status)}</div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-900 truncate group-hover:text-slate-700">
-                    {task.title}
-                  </p>
-                  <p className="text-xs text-slate-500 truncate">
-                    {task.projectId ? `Project ${task.projectId}` : 'No project'}
-                  </p>
-                </div>
+              {/* Status checkbox */}
+              <button className={cn(
+                'flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200',
+                statusStyle.bg,
+                'hover:scale-110'
+              )}>
+                <StatusIcon className={cn('w-4 h-4', statusStyle.color)} />
+              </button>
+
+              {/* Task content */}
+              <div className="flex-1 min-w-0">
+                <p className={cn(
+                  'text-sm font-medium text-slate-800 truncate',
+                  status === 'done' && 'line-through text-slate-400'
+                )}>
+                  {task.title}
+                </p>
+                <p className="text-xs text-slate-400 truncate mt-0.5">
+                  {task.projectId ? `Project` : 'No project'}
+                </p>
               </div>
-              <div className="flex items-center gap-2 ml-2 flex-shrink-0">
+
+              {/* Right side - Priority & Due */}
+              <div className="flex items-center gap-2 flex-shrink-0">
                 {task.priority && (
-                  <span className={`text-xs font-medium px-2 py-1 rounded whitespace-nowrap ${getPriorityColor(task.priority)}`}>
+                  <span className={cn(
+                    'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold capitalize',
+                    priorityStyle.bg,
+                    priorityStyle.text
+                  )}>
+                    <span className={cn('w-1.5 h-1.5 rounded-full', priorityStyle.dot)} />
                     {task.priority}
                   </span>
                 )}
+
                 {task.dueDate && (
-                  <span
-                    className={`text-xs whitespace-nowrap ${
-                      isUrgent(task.dueDate)
-                        ? 'text-red-600 font-semibold'
-                        : 'text-slate-500'
-                    }`}
-                  >
-                    {new Date(task.dueDate).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                    })}
+                  <span className={cn(
+                    'text-xs font-medium px-2 py-1 rounded-lg',
+                    isUrgent(task.dueDate)
+                      ? 'bg-rose-100 text-rose-700'
+                      : 'bg-slate-100 text-slate-600'
+                  )}>
+                    {formatDueDate(task.dueDate)}
                   </span>
                 )}
               </div>
             </div>
-          ))}
+          );
+        })}
 
-          {tasks.length > 6 && (
-            <button
-              onClick={onViewAll}
-              className="w-full text-center pt-3 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
-            >
-              View all {tasks.length} tasks →
-            </button>
-          )}
-        </div>
-      )}
-    </Card>
+        {tasks.length > 6 && (
+          <button
+            onClick={onViewAll}
+            className="w-full text-center py-3 text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors rounded-xl hover:bg-slate-50"
+          >
+            View all {tasks.length} tasks →
+          </button>
+        )}
+      </div>
+    </SectionCard>
   );
 };

@@ -3,34 +3,41 @@ import { activityApi, Activity } from '@/lib/api';
 import { useSocketEvent } from '@/contexts/SocketContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle, MessageSquare, FileUp, UserPlus, ArrowRight, RefreshCw } from 'lucide-react';
+import { Loader2, CheckCircle, MessageSquare, FileUp, UserPlus, ArrowRight, RefreshCw, Box } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 interface ActivityFeedProps {
   projectId: string;
   limit?: number;
+  showTitle?: boolean;
 }
 
-const ACTIVITY_ICONS = {
+const ACTIVITY_ICONS: Record<string, any> = {
   task_created: CheckCircle,
   task_updated: RefreshCw,
   task_moved: ArrowRight,
   message_sent: MessageSquare,
   file_uploaded: FileUp,
   member_joined: UserPlus,
+  project_created: Box,
+  project_updated: RefreshCw,
+  lead_assigned: UserPlus,
 };
 
-const ACTIVITY_COLORS = {
-  task_created: 'text-success bg-success/10',
-  task_updated: 'text-blue-500 bg-blue-500/10',
-  task_moved: 'text-purple-500 bg-purple-500/10',
-  message_sent: 'text-primary bg-primary/10',
-  file_uploaded: 'text-orange-500 bg-orange-500/10',
-  member_joined: 'text-accent bg-accent/10',
+const ACTIVITY_COLORS: Record<string, string> = {
+  task_created: 'text-green-400',
+  task_updated: 'text-blue-400',
+  task_moved: 'text-purple-400',
+  message_sent: 'text-blue-500',
+  file_uploaded: 'text-orange-400',
+  member_joined: 'text-yellow-400',
+  project_created: 'text-gray-400',
+  project_updated: 'text-blue-400',
+  lead_assigned: 'text-yellow-400',
 };
 
-export default function ActivityFeed({ projectId, limit }: ActivityFeedProps) {
+export default function ActivityFeed({ projectId, limit, showTitle = true }: ActivityFeedProps) {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -78,11 +85,13 @@ export default function ActivityFeed({ projectId, limit }: ActivityFeedProps) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b border-border">
-        <h3 className="font-medium">Activity</h3>
-      </div>
+      {showTitle && (
+        <div className="p-4 border-b border-border">
+          <h3 className="font-medium">Activity</h3>
+        </div>
+      )}
 
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className={cn("flex-1 overflow-y-auto", showTitle && "p-4")}>
         {isLoading && activities.length === 0 ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -95,30 +104,22 @@ export default function ActivityFeed({ projectId, limit }: ActivityFeedProps) {
           <div className="space-y-4">
             {activities.map((activity) => {
               const Icon = ACTIVITY_ICONS[activity.type] || CheckCircle;
-              const colorClass = ACTIVITY_COLORS[activity.type] || 'text-muted-foreground bg-muted';
+              const colorClass = ACTIVITY_COLORS[activity.type] || 'text-[#a1a1aa]';
 
               return (
-                <div key={activity.id} className="flex gap-3 animate-fade-in">
-                  <div className="flex flex-col items-center">
-                    <div className={cn('h-8 w-8 rounded-full flex items-center justify-center', colorClass)}>
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <div className="w-px flex-1 bg-border mt-2" />
+                <div key={activity.id} className="flex items-start gap-2.5 group/item">
+                  <div className={cn('mt-0.5 shrink-0')}>
+                    <Icon className={cn("h-3.5 w-3.5", colorClass)} />
                   </div>
 
-                  <div className="flex-1 pb-4">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Avatar className="h-5 w-5">
-                        <AvatarImage src={activity.user.avatar} />
-                        <AvatarFallback className="text-[10px]">
-                          {getInitials(activity.user.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm font-medium">{activity.user.name}</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{activity.description}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {formatDistanceToNow(new Date(activity.createdAt), { addSuffix: true })}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] leading-snug text-[#e4e4e7]">
+                      <span className="text-[#a1a1aa] whitespace-normal">
+                        {activity.user.name} {activity.description}
+                      </span>
+                      <span className="text-[#52525b] ml-1.5 whitespace-nowrap">
+                        · {formatDistanceToNow(new Date(activity.createdAt), { addSuffix: false }).replace('about ', '')}
+                      </span>
                     </p>
                   </div>
                 </div>

@@ -7,11 +7,14 @@ import { ApiError } from '../utils/ApiError.js';
  */
 export const generalLimiter = rateLimit({
   windowMs: config.rateLimit.windowMs,
-  max: config.rateLimit.maxRequests,
+  max: config.isDevelopment ? 10000 : config.rateLimit.maxRequests,
   message: 'Too many requests from this IP, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res, next) => {
+    if (config.isDevelopment) {
+      return next();
+    }
     throw new ApiError(429, 'Too many requests, please try again later');
   },
 });

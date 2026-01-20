@@ -179,18 +179,34 @@ export const teamsApi = {
 export const projectsApi = {
   list: async () => {
     const response = await api.get<{ projects: Project[] }>('/projects');
-    if (Array.isArray(response)) return response;
-    if (response && typeof response === 'object' && 'projects' in response) {
-      return (response as any).projects;
+    let items: any[] = [];
+    
+    if (Array.isArray(response)) {
+      items = response;
+    } else if (response && typeof response === 'object' && 'projects' in response) {
+      items = (response as any).projects;
+    } else {
+      items = response as unknown as any[];
     }
-    return response as unknown as Project[];
+
+    // Normalize _id to id if id is missing due to lean() queries
+    return items.map(p => ({
+      ...p,
+      id: p.id || p._id
+    })) as Project[];
   },
   
   create: (data: { name: string; description?: string; teamId: string }) => 
     api.post<Project>('/projects', data),
   
   get: (projectId: string) => 
-    api.get<ProjectDetails>(`/projects/${projectId}`),
+    api.get<{ project: ProjectDetails }>(`/projects/${projectId}`).then((res: any) => {
+      const p = res.project || res;
+      return {
+        ...p,
+        id: p.id || p._id
+      } as ProjectDetails;
+    }),
   
   update: (projectId: string, data: Partial<Project>) => 
     api.patch<Project>(`/projects/${projectId}`, data),

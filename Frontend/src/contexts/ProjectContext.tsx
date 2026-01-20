@@ -11,6 +11,7 @@ interface ProjectContextType {
   selectProject: (projectId: string) => Promise<void>;
   clearProject: () => void;
   refreshProjects: () => Promise<void>;
+  updateProject: (projectId: string, updates: Partial<Project>) => Promise<void>;
 }
 
 const ProjectContext = createContext<ProjectContextType | null>(null);
@@ -25,10 +26,10 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
 
   const refreshProjects = useCallback(async () => {
     if (!currentTeam) return;
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const fetchedProjects = await projectsApi.list();
       // Filter projects by current team if backend doesn't do it
@@ -68,6 +69,20 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     }
   }, [currentRoom, joinProjectRoom, leaveProjectRoom]);
 
+  const updateProject = useCallback(async (projectId: string, updates: Partial<Project>) => {
+    try {
+      const updatedProject = await projectsApi.update(projectId, updates);
+      if (currentProject && currentProject.id === projectId) {
+        // @ts-ignore
+        setCurrentProject(prev => prev ? { ...prev, ...updatedProject } : null);
+      }
+      setProjects(prev => prev.map(p => p.id === projectId ? { ...p, ...updatedProject } : p));
+    } catch (err) {
+      console.error('Failed to update project:', err);
+      throw err;
+    }
+  }, [currentProject]);
+
   const clearProject = useCallback(() => {
     if (currentRoom) {
       leaveProjectRoom(currentRoom);
@@ -85,6 +100,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         selectProject,
         clearProject,
         refreshProjects,
+        updateProject,
       }}
     >
       {children}

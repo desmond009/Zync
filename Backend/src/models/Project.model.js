@@ -19,13 +19,33 @@ const projectSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['ACTIVE', 'ARCHIVED', 'COMPLETED'],
-      default: 'ACTIVE',
+      enum: ['BACKLOG', 'PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELED'],
+      default: 'BACKLOG',
       index: true,
+    },
+    priority: {
+      type: String,
+      enum: ['LOW', 'MEDIUM', 'HIGH', 'URGENT', 'NONE'],
+      default: 'NONE',
+    },
+    leadUserId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    startDate: {
+      type: Date,
+    },
+    targetDate: {
+      type: Date,
     },
     color: {
       type: String,
       default: '#3B82F6',
+    },
+    createdById: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
     },
   },
   {

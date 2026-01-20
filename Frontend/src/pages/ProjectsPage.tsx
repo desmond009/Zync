@@ -116,7 +116,7 @@ export default function ProjectsPage() {
                   <div className="col-span-6 flex items-center gap-3">
                     <Box className="h-4 w-4 text-[#a1a1aa]" />
                     <span className="text-sm text-[#e4e4e7] font-medium">{project.name}</span>
-                    <span className="text-xs text-[#71717a] opacity-0 group-hover:opacity-100 transition-opacity">ZYN-{project.id.slice(0, 3).toUpperCase()}</span>
+                    <span className="text-xs text-[#71717a] opacity-0 group-hover:opacity-100 transition-opacity">ZYN-{project.id ? project.id.slice(0, 3).toUpperCase() : '000'}</span>
                   </div>
                   <div className="col-span-2">
                     <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-[#27272a] text-xs text-[#a1a1aa]">

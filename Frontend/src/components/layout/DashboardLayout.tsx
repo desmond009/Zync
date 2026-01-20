@@ -181,7 +181,7 @@ export default function DashboardLayout() {
               <Plus className="h-3 w-3 text-[#a1a1aa] hover:text-[#e4e4e7]" />
             </div>
             <div className="space-y-0.5">
-              {projects.slice(0, 6).map(project => (
+              {Array.isArray(projects) && projects.slice(0, 6).map((project) => (
                 <button
                   key={project.id}
                   onClick={() => {
@@ -190,7 +190,7 @@ export default function DashboardLayout() {
                   }}
                   className={cn(
                     "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm font-medium transition-colors text-left group",
-                    false // Active state logic can be added
+                    location.pathname.includes(project.id)
                       ? "bg-[#27272a] text-[#e4e4e7]"
                       : "text-[#a1a1aa] hover:bg-[#27272a]/50 hover:text-[#e4e4e7]"
                   )}
@@ -199,7 +199,6 @@ export default function DashboardLayout() {
                     <Hash className="h-3.5 w-3.5 flex-shrink-0" />
                     <span className="truncate">{project.name}</span>
                   </div>
-                  {/* Status dot or indicator could go here */}
                 </button>
               ))}
               <div className="px-2 py-1">

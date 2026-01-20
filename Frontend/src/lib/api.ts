@@ -168,12 +168,23 @@ export const teamsApi = {
   
   inviteByEmail: (teamId: string, email: string, role: string) => 
     api.post(`/teams/${teamId}/invite-email`, { email, role }),
+
+  getMembers: async (teamId: string) => {
+    const team = await teamsApi.get(teamId);
+    return (team as any).members || [];
+  },
 };
 
 // Projects API
 export const projectsApi = {
-  list: () => 
-    api.get<Project[]>('/projects'),
+  list: async () => {
+    const response = await api.get<{ projects: Project[] }>('/projects');
+    if (Array.isArray(response)) return response;
+    if (response && typeof response === 'object' && 'projects' in response) {
+      return (response as any).projects;
+    }
+    return response as unknown as Project[];
+  },
   
   create: (data: { name: string; description?: string; teamId: string }) => 
     api.post<Project>('/projects', data),
@@ -309,6 +320,12 @@ export interface Project {
   createdAt: string;
   taskCount: number;
   memberCount: number;
+  status: 'BACKLOG' | 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT' | 'NONE';
+  leadUserId?: string;
+  startDate?: string;
+  targetDate?: string;
+  createdById: string;
 }
 
 export interface ProjectDetails extends Project {

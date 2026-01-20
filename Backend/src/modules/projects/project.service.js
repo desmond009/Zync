@@ -8,7 +8,7 @@ class ProjectService {
    * Create a new project
    */
   async createProject(userId, projectData) {
-    const { name, description, teamId, color } = projectData;
+    const { name, description, teamId, color, priority, leadUserId, startDate, targetDate } = projectData;
 
     // Check if user is team member
     const teamMember = await TeamMember.findOne({
@@ -30,6 +30,11 @@ class ProjectService {
       description,
       teamId,
       color: color || '#3B82F6',
+      priority: priority || 'NONE',
+      leadUserId,
+      startDate,
+      targetDate,
+      createdById: userId,
     });
 
     await project.save();
@@ -221,11 +226,11 @@ class ProjectService {
       throw new ApiError(404, 'Project not found');
     }
 
-    const query = { 
+    const query = {
       projectId,
       teamId: project.teamId, // Enforce team scoping
     };
-    
+
     if (cursor) {
       query._id = { $lt: cursor };
     }

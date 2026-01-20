@@ -89,12 +89,15 @@ export default function InboxPage() {
     };
 
     return (
-        <div className="h-full flex bg-[#09090b] text-[#e4e4e7]">
+        <div className="h-full flex flex-col lg:flex-row bg-[#09090b] text-[#e4e4e7]">
             {/* Left Pane - Notification List */}
-            <div className="w-[400px] flex flex-col border-r border-[#27272a]">
+            <div className={cn(
+                "w-full lg:w-[400px] flex flex-col border-r border-[#27272a]",
+                selectedId && "hidden lg:flex"
+            )}>
                 {/* Header */}
-                <div className="h-14 border-b border-[#27272a] px-4 flex items-center justify-between shrink-0">
-                    <span className="font-medium text-sm">Inbox</span>
+                <div className="h-12 sm:h-14 border-b border-[#27272a] px-3 sm:px-4 flex items-center justify-between shrink-0">
+                    <span className="font-medium text-xs sm:text-sm">Inbox</span>
                     <div className="flex items-center gap-1">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -145,7 +148,7 @@ export default function InboxPage() {
                                             if (!isRead) markAsRead(id);
                                         }}
                                         className={cn(
-                                            "p-4 cursor-pointer transition-colors group relative flex gap-3 hover:bg-[#27272a]/50",
+                                            "p-3 sm:p-4 cursor-pointer transition-colors group relative flex gap-2 sm:gap-3 hover:bg-[#27272a]/50",
                                             isSelected && "bg-[#27272a]",
                                             !isRead && "bg-[#27272a]/20"
                                         )}
@@ -178,18 +181,34 @@ export default function InboxPage() {
             </div>
 
             {/* Right Pane - Detail View */}
-            <div className="flex-1 flex flex-col items-center justify-center bg-[#09090b]">
+            <div className={cn(
+                "flex-1 flex flex-col items-center justify-center bg-[#09090b]",
+                !selectedId && "hidden lg:flex"
+            )}>
                 {selectedId ? (
-                    // Placeholder for Detail View if we had full content
-                    <div className="flex flex-col items-center justify-center text-[#a1a1aa]">
-                        {/* Would render full notification content here */}
-                        <p>Notification Details View</p>
+                    <div className="w-full h-full flex flex-col">
+                        {/* Mobile back button */}
+                        <div className="lg:hidden h-12 sm:h-14 border-b border-[#27272a] px-3 sm:px-4 flex items-center gap-3">
+                            <button
+                                onClick={() => setSelectedId(null)}
+                                className="text-[#a1a1aa] hover:text-[#e4e4e7]"
+                            >
+                                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                </svg>
+                            </button>
+                            <span className="font-medium text-xs sm:text-sm">Back to Inbox</span>
+                        </div>
+                        {/* Notification content */}
+                        <div className="flex-1 flex flex-col items-center justify-center text-[#a1a1aa] p-4">
+                            <p className="text-sm">Notification Details View</p>
+                        </div>
                     </div>
                 ) : (
                     // Empty State
                     <div className="flex flex-col items-center justify-center text-[#a1a1aa] gap-3">
                         <div className="relative">
-                            <InboxIcon className="h-16 w-16 stroke-[1px] opacity-20" />
+                            <InboxIcon className="h-12 w-12 sm:h-16 sm:w-16 stroke-[1px] opacity-20" />
                             {/* Optional: Add a subtle badge or graphic if needed to match exact image */}
                         </div>
                         <p className="text-sm font-medium opacity-40">No notifications</p>

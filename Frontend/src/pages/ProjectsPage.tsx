@@ -21,11 +21,11 @@ export default function ProjectsPage() {
   return (
     <div className="flex flex-col h-full bg-[#09090b] text-[#e4e4e7]">
       {/* Header */}
-      <div className="h-14 border-b border-[#27272a] flex items-center justify-between px-4 lg:px-6">
+      <div className="h-12 sm:h-14 border-b border-[#27272a] flex items-center justify-between px-3 sm:px-4 lg:px-6">
         <div className="flex items-center gap-4">
-          <h1 className="text-sm font-medium">Projects</h1>
-          <div className="w-px h-4 bg-[#27272a]" />
-          <div className="flex items-center gap-1">
+          <h1 className="text-xs sm:text-sm font-medium">Projects</h1>
+          <div className="w-px h-4 bg-[#27272a] hidden sm:block" />
+          <div className="flex items-center gap-1 hidden sm:flex">
             <button className="flex items-center gap-2 px-2 py-1 bg-[#27272a] rounded text-xs font-medium text-[#e4e4e7] hover:bg-[#3f3f46] transition-colors">
               <Box className="h-3.5 w-3.5" />
               All projects
@@ -36,27 +36,28 @@ export default function ProjectsPage() {
             </button>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 text-[#a1a1aa] hover:text-[#e4e4e7] hover:bg-[#27272a]"
+            className="h-8 w-8 p-0 text-[#a1a1aa] hover:text-[#e4e4e7] hover:bg-[#27272a] hidden sm:flex"
           >
             <ListFilter className="h-4 w-4" />
           </Button>
-          <div className="w-px h-4 bg-[#27272a]" />
+          <div className="w-px h-4 bg-[#27272a] hidden sm:block" />
           <Button
             size="sm"
-            className="h-7 text-xs bg-[#e4e4e7] text-[#09090b] hover:bg-white font-medium px-3 gap-1.5"
+            className="h-7 text-xs bg-[#e4e4e7] text-[#09090b] hover:bg-white font-medium px-2 sm:px-3 gap-1.5"
           >
             <Plus className="h-3.5 w-3.5" />
-            Add project
+            <span className="hidden sm:inline">Add project</span>
+            <span className="sm:hidden">Add</span>
           </Button>
         </div>
       </div>
 
       {/* Toolbar */}
-      <div className="h-10 border-b border-[#27272a] flex items-center px-4 lg:px-6 justify-between">
+      <div className="h-10 border-b border-[#27272a] flex items-center px-3 sm:px-4 lg:px-6 justify-between">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-[#a1a1aa] hover:text-[#e4e4e7] hover:bg-[#27272a] gap-2">
             <ListFilter className="h-3.5 w-3.5" />
@@ -70,7 +71,7 @@ export default function ProjectsPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto p-6 flex flex-col items-center justify-center">
+      <div className="flex-1 overflow-auto p-4 sm:p-6 flex flex-col items-center justify-center">
         {projects.length === 0 ? (
           <div className="max-w-[420px] text-center">
             <div className="mb-6 flex justify-center">
@@ -99,11 +100,11 @@ export default function ProjectsPage() {
         ) : (
           <div className="w-full max-w-5xl mx-auto self-start">
             {/* List View Header */}
-            <div className="grid grid-cols-12 gap-4 px-4 py-2 border-b border-[#27272a] text-xs font-medium text-[#a1a1aa]">
-              <div className="col-span-6">Name</div>
-              <div className="col-span-2">Status</div>
-              <div className="col-span-2">Priority</div>
-              <div className="col-span-2">Lead</div>
+            <div className="grid grid-cols-12 gap-2 sm:gap-4 px-3 sm:px-4 py-2 border-b border-[#27272a] text-xs font-medium text-[#a1a1aa]">
+              <div className="col-span-6 sm:col-span-6">Name</div>
+              <div className="col-span-3 sm:col-span-2 hidden sm:block">Status</div>
+              <div className="col-span-3 sm:col-span-2 hidden md:block">Priority</div>
+              <div className="col-span-3 sm:col-span-2 hidden lg:block">Lead</div>
             </div>
             {/* List Items */}
             <div className="mt-2 space-y-1">
@@ -111,23 +112,23 @@ export default function ProjectsPage() {
                 <div
                   key={project.id}
                   onClick={() => handleProjectClick(project.id)}
-                  className="grid grid-cols-12 gap-4 px-4 py-2.5 rounded-md hover:bg-[#27272a]/50 cursor-pointer items-center group transition-colors"
+                  className="grid grid-cols-12 gap-2 sm:gap-4 px-3 sm:px-4 py-2.5 rounded-md hover:bg-[#27272a]/50 cursor-pointer items-center group transition-colors"
                 >
-                  <div className="col-span-6 flex items-center gap-3">
+                  <div className="col-span-6 sm:col-span-6 flex items-center gap-2 sm:gap-3 min-w-0">
                     <Box className="h-4 w-4 text-[#a1a1aa]" />
-                    <span className="text-sm text-[#e4e4e7] font-medium">{project.name}</span>
+                    <span className="text-xs sm:text-sm text-[#e4e4e7] font-medium truncate">{project.name}</span>
                     <span className="text-xs text-[#71717a] opacity-0 group-hover:opacity-100 transition-opacity">ZYN-{project.id ? project.id.slice(0, 3).toUpperCase() : '000'}</span>
                   </div>
-                  <div className="col-span-2">
+                  <div className="col-span-3 sm:col-span-2 hidden sm:block">
                     <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-[#27272a] text-xs text-[#a1a1aa]">
                       <div className="h-1.5 w-1.5 rounded-full border border-[#a1a1aa]" />
                       Backlog
                     </div>
                   </div>
-                  <div className="col-span-2 text-xs text-[#a1a1aa]">
+                  <div className="col-span-3 sm:col-span-2 text-xs text-[#a1a1aa] hidden md:block">
                     ---
                   </div>
-                  <div className="col-span-2 flex items-center gap-2">
+                  <div className="col-span-3 sm:col-span-2 flex items-center gap-2 hidden lg:flex">
                     <div className="h-5 w-5 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-[10px]">
                       U
                     </div>

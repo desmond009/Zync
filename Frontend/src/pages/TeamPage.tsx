@@ -44,15 +44,15 @@ export default function TeamPage() {
   };
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Team</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold">Team</h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
             Manage {currentTeam?.name || 'your team'} members
           </p>
         </div>
-        <Button className="gradient-primary gap-2">
+        <Button className="gradient-primary gap-2 w-full sm:w-auto">
           <Plus className="h-4 w-4" />
           Invite Member
         </Button>
@@ -65,7 +65,7 @@ export default function TeamPage() {
               <Users className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-lg">Team Members</CardTitle>
+              <CardTitle className="text-base sm:text-lg">Team Members</CardTitle>
               <CardDescription>{members.length} members</CardDescription>
             </div>
           </div>
@@ -80,7 +80,7 @@ export default function TeamPage() {
               {members.map((member) => (
                 <div
                   key={member.id}
-                  className="flex items-center justify-between py-4 first:pt-0 last:pb-0"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between py-4 first:pt-0 last:pb-0 gap-3 sm:gap-0"
                 >
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">

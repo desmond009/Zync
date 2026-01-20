@@ -160,16 +160,16 @@ export default function ProjectWorkspacePage() {
   return (
     <div className="h-[calc(100vh-3.5rem)] flex flex-col bg-[#09090b] text-[#e4e4e7]">
       {/* Project Header */}
-      <div className="h-12 border-b border-[#27272a] flex items-center justify-between px-4 bg-[#09090b] shrink-0">
+      <div className="h-12 sm:h-14 border-b border-[#27272a] flex items-center justify-between px-3 sm:px-4 bg-[#09090b] shrink-0 overflow-hidden">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="flex items-center gap-2 text-sm text-[#a1a1aa] whitespace-nowrap">
+          <div className="flex items-center gap-2 text-xs sm:text-sm text-[#a1a1aa] whitespace-nowrap">
             <span className="hover:text-[#e4e4e7] cursor-pointer">Projects</span>
             <span className="text-[#3f3f46]">›</span>
             <div className="flex items-center gap-1.5 px-1.5 py-0.5 rounded hover:bg-[#27272a] transition-colors cursor-pointer group">
               <div className="h-4 w-4 bg-[#27272a] rounded flex items-center justify-center border border-[#3f3f46]/50">
                 <Box className="h-2.5 w-2.5 text-[#e4e4e7]" />
               </div>
-              <span className="text-[#e4e4e7] font-medium truncate max-w-[150px]">{currentProject.name}</span>
+              <span className="text-[#e4e4e7] font-medium truncate max-w-[100px] sm:max-w-[150px]">{currentProject.name}</span>
               <Star className="h-3.5 w-3.5 text-[#a1a1aa] group-hover:text-[#e4e4e7]" />
             </div>
           </div>
@@ -180,7 +180,7 @@ export default function ProjectWorkspacePage() {
           <div className="h-6 w-px bg-[#27272a] mx-2 hidden sm:block" />
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
-            <TabsList className="h-full bg-transparent p-0 gap-1 overflow-x-auto no-scrollbar max-w-[calc(100vw-180px)] sm:max-w-none">
+            <TabsList className="h-full bg-transparent p-0 gap-1 overflow-x-auto no-scrollbar max-w-[calc(100vw-220px)] sm:max-w-[calc(100vw-280px)] lg:max-w-none">
               <TabsTrigger value="overview" className="h-8 px-3 rounded-md data-[state=active]:bg-[#18181b] data-[state=active]:text-white text-[#8a8a93] text-sm font-medium border-0 shadow-none hover:text-[#e4e4e7] transition-colors">
                 <FileText className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Overview</span>
@@ -200,14 +200,14 @@ export default function ProjectWorkspacePage() {
           </Tabs>
         </div>
 
-        <div className="flex items-center gap-2 ml-4 shrink-0">
-          <button className="p-2 text-[#a1a1aa] hover:text-[#e4e4e7] transition-colors rounded-md hover:bg-[#27272a]">
+        <div className="flex items-center gap-1 sm:gap-2 ml-2 sm:ml-4 shrink-0">
+          <button className="p-1.5 sm:p-2 text-[#a1a1aa] hover:text-[#e4e4e7] transition-colors rounded-md hover:bg-[#27272a] hidden sm:block">
             <Bell className="h-4 w-4" />
           </button>
-          <button className="p-2 text-[#a1a1aa] hover:text-[#e4e4e7] transition-colors rounded-md hover:bg-[#27272a]">
+          <button className="p-1.5 sm:p-2 text-[#a1a1aa] hover:text-[#e4e4e7] transition-colors rounded-md hover:bg-[#27272a] hidden sm:block">
             <LinkIcon className="h-4 w-4" />
           </button>
-          <button onClick={() => setShowSidebar(!showSidebar)} className={cn("p-2 transition-colors rounded-md", showSidebar ? "bg-[#27272a] text-[#e4e4e7]" : "text-[#a1a1aa] hover:text-[#e4e4e7] hover:bg-[#27272a]")}>
+          <button onClick={() => setShowSidebar(!showSidebar)} className={cn("p-1.5 sm:p-2 transition-colors rounded-md", showSidebar ? "bg-[#27272a] text-[#e4e4e7]" : "text-[#a1a1aa] hover:text-[#e4e4e7] hover:bg-[#27272a]")}>
             <PanelRightOpen className="h-4 w-4" />
           </button>
         </div>
@@ -218,7 +218,7 @@ export default function ProjectWorkspacePage() {
         <div className="flex-1 overflow-y-auto min-w-0">
           <Tabs value={activeTab} className="w-full">
             <TabsContent value="overview" className="m-0 border-0 focus-visible:ring-0">
-              <div className="p-8 max-w-4xl mx-auto space-y-10 animate-fade-in">
+              <div className="p-4 sm:p-6 md:p-8 max-w-4xl mx-auto space-y-8 sm:space-y-10 animate-fade-in">
                 {/* Header Info */}
                 <div className="space-y-4">
                   <div className="h-14 w-14 bg-[#27272a] rounded-xl flex items-center justify-center border border-[#3f3f46]/50 shadow-sm mb-4">
@@ -233,7 +233,7 @@ export default function ProjectWorkspacePage() {
                           handleUpdateProject({ name: e.target.value });
                         }
                       }}
-                      className="text-3xl font-bold tracking-tight text-[#e4e4e7] bg-transparent border-none focus:ring-0 p-0 w-full"
+                      className="text-2xl sm:text-3xl font-bold tracking-tight text-[#e4e4e7] bg-transparent border-none focus:ring-0 p-0 w-full"
                     />
                     <input
                       type="text"
@@ -244,15 +244,15 @@ export default function ProjectWorkspacePage() {
                           handleUpdateProject({ description: e.target.value });
                         }
                       }}
-                      className="w-full bg-transparent border-none text-[#a1a1aa] placeholder:text-[#3f3f46] focus:ring-0 px-0 text-base p-0 h-auto font-normal focus-visible:ring-0 focus-visible:ring-offset-0"
+                      className="w-full bg-transparent border-none text-[#a1a1aa] placeholder:text-[#3f3f46] focus:ring-0 px-0 text-sm sm:text-base p-0 h-auto font-normal focus-visible:ring-0 focus-visible:ring-offset-0"
                     />
                   </div>
                 </div>
 
                 {/* Properties Summary Row */}
-                <div className="flex flex-wrap items-center gap-x-8 gap-y-4 text-sm">
+                <div className="flex flex-wrap items-center gap-x-4 sm:gap-x-8 gap-y-4 text-sm">
                   <div className="flex items-center gap-3 group">
-                    <span className="text-[#a1a1aa] w-20 shrink-0">Properties</span>
+                    <span className="text-[#a1a1aa] w-16 sm:w-20 shrink-0 text-xs sm:text-sm">Properties</span>
 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -356,7 +356,7 @@ export default function ProjectWorkspacePage() {
                   </div>
 
                   <div className="flex items-center gap-3 w-full">
-                    <span className="text-[#a1a1aa] w-20 shrink-0">Resources</span>
+                    <span className="text-[#a1a1aa] w-16 sm:w-20 shrink-0 text-xs sm:text-sm">Resources</span>
                     <button className="flex items-center gap-2 text-[#a1a1aa] hover:text-[#e4e4e7] px-2 py-1.5 rounded-md hover:bg-[#27272a] transition-all cursor-pointer group/prop text-[13px]">
                       <Plus className="h-4 w-4" />
                       <span>Add document or link...</span>
@@ -422,7 +422,7 @@ export default function ProjectWorkspacePage() {
             />
 
             <div className={cn(
-              "w-[300px] border-l border-[#27272a] bg-[#09090b] flex flex-col",
+              "w-[280px] sm:w-[300px] border-l border-[#27272a] bg-[#09090b] flex flex-col",
               "fixed inset-y-0 right-0 z-40 shadow-xl lg:relative lg:z-0 lg:shadow-none"
             )}>
               <div className="p-4 space-y-1 overflow-y-auto">

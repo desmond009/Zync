@@ -272,7 +272,7 @@ export const notificationsApi = {
     api.patch(`/notifications/${notificationId}/read`),
   
   markAllRead: () => 
-    api.post('/notifications/mark-all-read'),
+    api.patch('/notifications/read-all'),
 };
 
 // Types
@@ -363,11 +363,11 @@ export interface Activity {
 }
 
 export interface Notification {
-  id: string;
+  _id: string; // Mongoose ID
+  id?: string; // Virtual ID
   type: string;
-  title: string;
-  message: string;
-  read: boolean;
+  content: string | any;
+  isRead: boolean;
   projectId?: string;
   createdAt: string;
 }

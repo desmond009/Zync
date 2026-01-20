@@ -125,10 +125,10 @@ export default function DashboardLayout() {
 
           {/* Section 1: Core Nav */}
           <div className="space-y-0.5">
-            <Link to="/dashboard">
+            <Link to="/dashboard/inbox">
               <button className={cn(
                 "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm font-medium transition-colors",
-                location.pathname === '/dashboard'
+                location.pathname === '/dashboard/inbox'
                   ? "bg-[#27272a] text-[#e4e4e7]"
                   : "text-[#a1a1aa] hover:bg-[#27272a]/50 hover:text-[#e4e4e7]"
               )}>

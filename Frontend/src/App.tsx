@@ -14,6 +14,7 @@ import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import DashboardPage from "./pages/DashboardPage";
+import InboxPage from "./pages/InboxPage";
 import ProjectsPage from "./pages/ProjectsPage";
 import ProjectWorkspacePage from "./pages/ProjectWorkspacePage";
 import TeamPage from "./pages/TeamPage";
@@ -47,6 +48,7 @@ const App = () => (
                     }
                   >
                     <Route index element={<DashboardPage />} />
+                    <Route path="inbox" element={<InboxPage />} />
                     <Route path="projects" element={<ProjectsPage />} />
                     <Route path="projects/:projectId" element={<ProjectWorkspacePage />} />
                     <Route path="team" element={<TeamPage />} />

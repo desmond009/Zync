@@ -7,7 +7,8 @@ class RedisClient {
         host: process.env.REDIS_HOST || 'localhost',
         port: parseInt(process.env.REDIS_PORT, 10) || 6379,
         maxRetriesPerRequest: 3,
-        enableReadyCheck: false,
+        // When disconnected, queue commands (default true)
+        // Set to false if you want commands to fail fast when disconnected
         enableOfflineQueue: true,
         retryStrategy: (times) => {
           const delay = Math.min(times * 50, 2000);
@@ -37,17 +38,59 @@ class RedisClient {
       });
 
       this.client.on('error', (error) => {
-        console.error('❌ Redis connection error:', error);
+        // Suppress default error logging for connection refusal to avoid noise
+        // explicit handling in connect() will show a better message
+        if (error.code === 'ECONNREFUSED') {
+          // console.error('❌ Redis connection refused');
+        } else {
+          console.error('❌ Redis connection error:', error);
+        }
       });
 
       this.client.on('reconnecting', () => {
-        console.log('🔄 Redis reconnecting...');
+        // console.log('🔄 Redis reconnecting...');
       });
 
       RedisClient.instance = this;
     }
 
     return RedisClient.instance;
+  }
+
+  async connect() {
+    return new Promise((resolve, reject) => {
+      // If already connected
+      if (this.client.status === 'ready') {
+        return resolve();
+      }
+
+      const timeout = setTimeout(() => {
+        reject(new Error(`Redis connection timeout: Failed to connect to ${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`));
+      }, 5000); // 5 second timeout
+
+      const onReady = () => {
+        clearTimeout(timeout);
+        this.client.removeListener('error', onError);
+        resolve();
+      };
+
+      const onError = (err) => {
+        if (err.code === 'ECONNREFUSED') {
+          clearTimeout(timeout);
+          this.client.removeListener('ready', onReady);
+          console.error('\n\x1b[31m%s\x1b[0m', '────────────────────────────────────────────────────');
+          console.error('\x1b[31m%s\x1b[0m', '🚨 REDIS CONNECTION FAILED');
+          console.error('\x1b[33m%s\x1b[0m', `   Could not connect to Redis at ${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`);
+          console.error('\x1b[33m%s\x1b[0m', '   Please make sure Redis is installed and running.');
+          console.error('\x1b[90m%s\x1b[0m', '   Run: redis-server');
+          console.error('\x1b[31m%s\x1b[0m', '────────────────────────────────────────────────────\n');
+          reject(new Error('Redis connection failed'));
+        }
+      };
+
+      this.client.once('ready', onReady);
+      this.client.on('error', onError);
+    });
   }
 
   getClient() {

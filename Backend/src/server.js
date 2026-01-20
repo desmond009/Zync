@@ -14,6 +14,9 @@ const startServer = async () => {
     // Connect to database
     await databaseClient.connect();
 
+    // Connect to Redis
+    await redisClient.connect();
+
     // Create Express app
     const app = createApp();
 
@@ -55,7 +58,7 @@ const startServer = async () => {
     });
 
     // ==================== GRACEFUL SHUTDOWN ====================
-    
+
     const gracefulShutdown = async (signal) => {
       logger.info(`\n${signal} received. Starting graceful shutdown...`);
 

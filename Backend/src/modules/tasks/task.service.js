@@ -3,6 +3,8 @@ import { ApiError } from '../../utils/ApiError.js';
 import { Task, ProjectMember, Comment, Project, Activity } from '../../models/index.js';
 import { verifyProjectAccess, verifyUsersInProject } from '../../middleware/project.middleware.js';
 import activityService from '../activities/activity.service.js';
+import notificationService from '../notifications/notification.service.js';
+import { emitNotification } from '../../socket/events/notification.events.js';
 
 /**
  * PRODUCTION-GRADE TASK SERVICE
@@ -126,6 +128,17 @@ class TaskService {
           task: task.toObject(),
           actor: { id: userId },
         });
+
+        // Create and send notification if assigned to someone else
+        if (assignedToId && assignedToId !== userId) {
+          const notification = await notificationService.createNotification(
+            assignedToId,
+            'TASK_ASSIGNED',
+            `You were assigned to task: ${task.title}`,
+            { projectId, teamId: project.teamId }
+          );
+          emitNotification(io, assignedToId, notification);
+        }
       }
 
       return task.toObject();
@@ -411,6 +424,17 @@ class TaskService {
           assignedToId,
           actor: { id: userId },
         });
+
+        // Create and send notification to assignee
+        if (assignedToId && assignedToId !== userId) {
+          const notification = await notificationService.createNotification(
+            assignedToId,
+            'TASK_ASSIGNED',
+            `You were assigned to task: ${task.title}`,
+            { projectId, teamId: project.teamId }
+          );
+          emitNotification(io, assignedToId, notification);
+        }
       }
 
       return task.toObject();
